@@ -1,0 +1,26 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Build output
+target/
+build/
+out/
+
+# Local data, logs, and container volumes
+*.log
+*.dump
+*.sql.gz
+postgres-data/
+volumes/
+
+# IDE and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
