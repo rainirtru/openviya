@@ -51,7 +51,7 @@ public class SecurityConfiguration {
             ObjectProvider<OAuth2AuthorizedClientRepository> telegramAuthorizedClientRepository,
             TelegramOidcSuccessHandler telegramSuccessHandler) throws Exception {
         http
-                .csrf(csrf -> {})
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/internal/telegram/identity/resolve"))
                 .securityContext(context -> context.securityContextRepository(contextRepository))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -60,6 +60,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/actuator/health/**", "/actuator/info", "/api/v1").permitAll()
                         .requestMatchers("/api/v1/staff/auth/**").permitAll()
                         .requestMatchers("/api/v1/auth/telegram/**", "/api/v1/auth/logout",
+                                "/api/v1/internal/telegram/identity/resolve",
                                 "/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/v1/me", "/api/v1/me/**").hasRole("USER")
                         .requestMatchers("/api/v1/admin/owner/**").hasRole("OWNER")

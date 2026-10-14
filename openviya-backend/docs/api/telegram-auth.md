@@ -24,3 +24,19 @@ Register the exact callback URL and the frontend origin in Telegram's allowed UR
 The OIDC `sub` is not treated as the Bot API numeric user ID. The provider's documented claims distinguish `sub` from the profile's numeric `id`; linking to an existing bot identity must use the latter. A live Bot API integration contract check remains required before marking that cross-channel mapping verified.
 
 When OIDC is not configured, the login endpoint returns `503 Service Unavailable`. Telegram login does not accept a caller-supplied Telegram user ID.
+
+## Trusted bot identity resolution
+
+The separately deployed trusted bot resolves a Telegram identity through `POST /api/v1/internal/telegram/identity/resolve`. Set a random service token of at least 32 characters as `OPENVIYA_TELEGRAM_BOT_SERVICE_TOKEN` in both services. Send it as `Authorization: Bearer …` over TLS:
+
+```json
+{
+  "telegramUserId": "123456789",
+  "username": "example",
+  "displayName": "Example User"
+}
+```
+
+The endpoint returns only `{ "userId": "…" }`. It uses distributed PostgreSQL rate limits for source and Telegram ID, stores no raw service token, and writes a system audit event. Since it authenticates with an explicit Bearer header rather than a browser cookie, CSRF is exempted only for this exact route. Without the service token it returns `503`; invalid credentials return `401`. Only this exact internal route is allowed through the security matcher. The bot must authenticate Telegram updates with Telegram's own webhook mechanism before forwarding the ID; the backend does not accept an unauthenticated user ID as proof of identity.
+
+Rotate the shared service token by changing it in both services and restarting them. Do not place it in browser code or client requests.
