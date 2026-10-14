@@ -63,6 +63,11 @@ openviya:
       enabled: ${OPENVIYA_OWNER_RECOVERY_ENABLED:false}
       login: ${OPENVIYA_OWNER_RECOVERY_LOGIN:}
       password: ${OPENVIYA_OWNER_RECOVERY_PASSWORD:}
+    telegram:
+      enabled: ${OPENVIYA_TELEGRAM_OIDC_ENABLED:false}
+      client-id: ${OPENVIYA_TELEGRAM_OIDC_CLIENT_ID:}
+      client-secret: ${OPENVIYA_TELEGRAM_OIDC_CLIENT_SECRET:}
+      redirect-uri: ${OPENVIYA_TELEGRAM_OIDC_REDIRECT_URI:}
   queue:
     poll-interval: ${OPENVIYA_QUEUE_POLL_INTERVAL:1s}
     batch-size: ${OPENVIYA_QUEUE_BATCH_SIZE:20}

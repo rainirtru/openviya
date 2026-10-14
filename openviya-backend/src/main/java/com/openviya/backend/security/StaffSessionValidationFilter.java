@@ -1,5 +1,7 @@
 package com.openviya.backend.security;
 
+import com.openviya.backend.identity.UserIdentityRepository;
+import com.openviya.backend.identity.UserPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,9 +18,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class StaffSessionValidationFilter extends OncePerRequestFilter {
 
     private final StaffAuthRepository repository;
+    private final UserIdentityRepository userIdentities;
 
-    public StaffSessionValidationFilter(StaffAuthRepository repository) {
+    public StaffSessionValidationFilter(StaffAuthRepository repository, UserIdentityRepository userIdentities) {
         this.repository = repository;
+        this.userIdentities = userIdentities;
     }
 
     @Override
@@ -46,6 +50,14 @@ public class StaffSessionValidationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(
                         UsernamePasswordAuthenticationToken.authenticated(refreshedPrincipal, null, authorities));
             }
+        } else if (authentication != null && authentication.isAuthenticated()
+                && authentication.getPrincipal() instanceof UserPrincipal principal
+                && !userIdentities.isActive(principal.userId())) {
+            var session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
+            SecurityContextHolder.clearContext();
         }
         filterChain.doFilter(request, response);
     }

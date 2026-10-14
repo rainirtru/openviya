@@ -63,6 +63,10 @@ public class UserIdentityRepository {
             resolvedUserId = insertedIdentity.getFirst();
         }
 
+        if (!isActive(resolvedUserId)) {
+            throw new UserIdentityException("USER_ACCOUNT_UNAVAILABLE");
+        }
+
         return jdbcTemplate.queryForObject(
                 """
                 SELECT user_id, provider, provider_subject, username, display_name, verified_at
@@ -72,6 +76,12 @@ public class UserIdentityRepository {
                 UserIdentityRepository::mapIdentity,
                 resolvedUserId,
                 profile.telegramUserId());
+    }
+
+    public boolean isActive(UUID userId) {
+        return Boolean.TRUE.equals(jdbcTemplate.query(
+                "SELECT status = 'ACTIVE' FROM app_user WHERE id = ?",
+                rs -> rs.next() && rs.getBoolean(1), userId));
     }
 
     private static ExternalIdentity mapIdentity(ResultSet rs, int rowNum) throws SQLException {
