@@ -11,6 +11,18 @@ spring:
   flyway:
     enabled: true
     validate-on-migrate: true
+  session:
+    timeout: ${OPENVIYA_SESSION_TIMEOUT:30m}
+    jdbc:
+      initialize-schema: never
+  servlet:
+    session:
+      cookie:
+        name: OPENVIYA_SESSION
+        path: /api/v1
+        http-only: true
+        secure: ${OPENVIYA_SESSION_COOKIE_SECURE:true}
+        same-site: lax
   lifecycle:
     timeout-per-shutdown-phase: 20s
 
@@ -39,6 +51,14 @@ management:
 
 openviya:
   public-base-url: ${OPENVIYA_PUBLIC_BASE_URL:http://localhost:8080}
+  auth:
+    challenge-lifetime: ${OPENVIYA_AUTH_CHALLENGE_LIFETIME:5m}
+    totp-encryption-key: ${OPENVIYA_TOTP_ENCRYPTION_KEY:}
+    totp-encryption-key-version: ${OPENVIYA_TOTP_ENCRYPTION_KEY_VERSION:v1}
+    bootstrap-owner:
+      enabled: ${OPENVIYA_BOOTSTRAP_OWNER_ENABLED:false}
+      login: ${OPENVIYA_BOOTSTRAP_OWNER_LOGIN:}
+      password: ${OPENVIYA_BOOTSTRAP_OWNER_PASSWORD:}
   queue:
     poll-interval: ${OPENVIYA_QUEUE_POLL_INTERVAL:1s}
     batch-size: ${OPENVIYA_QUEUE_BATCH_SIZE:20}

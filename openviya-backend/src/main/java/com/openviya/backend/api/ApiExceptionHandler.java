@@ -1,6 +1,7 @@
 package com.openviya.backend.api;
 
 import jakarta.servlet.http.HttpServletRequest;
+import com.openviya.backend.security.StaffAuthException;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,15 @@ public class ApiExceptionHandler {
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<ApiError> handleInvalidRequest(Exception exception, HttpServletRequest request) {
         return response(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Проверьте параметры запроса.", request);
+    }
+
+    @ExceptionHandler(StaffAuthException.class)
+    public ResponseEntity<ApiError> handleStaffAuth(StaffAuthException exception, HttpServletRequest request) {
+        return response(
+                exception.status(),
+                exception.code(),
+                "Не удалось выполнить вход сотрудника.",
+                request);
     }
 
     @ExceptionHandler(Exception.class)
