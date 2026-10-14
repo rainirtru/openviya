@@ -1,0 +1,6 @@
+* text=auto
+openviya-backend/mvnw text eol=lf
+openviya-backend/mvnw.cmd text eol=crlf
+openviya-backend/.mvn/wrapper/maven-wrapper.properties text eol=lf
+*.sh text eol=lf
+*.cmd text eol=crlf

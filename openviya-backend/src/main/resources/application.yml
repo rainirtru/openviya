@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: openviya-backend
+  datasource:
+    url: ${OPENVIYA_DB_URL:jdbc:postgresql://localhost:5432/openviya}
+    username: ${OPENVIYA_DB_USERNAME:openviya}
+    password: ${OPENVIYA_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${OPENVIYA_DB_POOL_SIZE:10}
+      connection-timeout: 3000
+  flyway:
+    enabled: true
+    validate-on-migrate: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db
+  info:
+    env:
+      enabled: false
+
+openviya:
+  public-base-url: ${OPENVIYA_PUBLIC_BASE_URL:http://localhost:8080}
+  queue:
+    poll-interval: ${OPENVIYA_QUEUE_POLL_INTERVAL:1s}
+    batch-size: ${OPENVIYA_QUEUE_BATCH_SIZE:20}
+    lease-duration: ${OPENVIYA_QUEUE_LEASE_DURATION:30s}
+
+logging:
+  pattern:
+    level: "%5p [correlationId:%X{correlationId:--}]"
