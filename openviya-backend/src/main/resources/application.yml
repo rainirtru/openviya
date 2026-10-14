@@ -59,6 +59,10 @@ openviya:
       enabled: ${OPENVIYA_BOOTSTRAP_OWNER_ENABLED:false}
       login: ${OPENVIYA_BOOTSTRAP_OWNER_LOGIN:}
       password: ${OPENVIYA_BOOTSTRAP_OWNER_PASSWORD:}
+    owner-recovery:
+      enabled: ${OPENVIYA_OWNER_RECOVERY_ENABLED:false}
+      login: ${OPENVIYA_OWNER_RECOVERY_LOGIN:}
+      password: ${OPENVIYA_OWNER_RECOVERY_PASSWORD:}
   queue:
     poll-interval: ${OPENVIYA_QUEUE_POLL_INTERVAL:1s}
     batch-size: ${OPENVIYA_QUEUE_BATCH_SIZE:20}

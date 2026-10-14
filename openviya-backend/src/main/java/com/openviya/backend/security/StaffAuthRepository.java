@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -160,6 +161,94 @@ public class StaffAuthRepository {
         jdbcTemplate.update(
                 "INSERT INTO staff_role (staff_id, role) VALUES (?, 'OWNER')", staffId);
         return staffId;
+    }
+
+    public UUID createStaff(String login, String normalizedLogin, String passwordHash, UUID assignedBy, Set<String> roles) {
+        UUID staffId = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO staff_account (id, login, login_normalized, password_hash, status) "
+                        + "VALUES (?, ?, ?, ?, 'PENDING')",
+                staffId, login, normalizedLogin, passwordHash);
+        for (String role : roles) {
+            jdbcTemplate.update(
+                    "INSERT INTO staff_role (staff_id, role, assigned_by) VALUES (?, ?, ?)",
+                    staffId, role, assignedBy);
+        }
+        return staffId;
+    }
+
+    public void lockRoleAdministration() {
+        jdbcTemplate.execute("SELECT pg_advisory_xact_lock(7436244822)");
+    }
+
+    public ManagedStaff managedStaff(UUID staffId) {
+        return jdbcTemplate.query(
+                "SELECT id, login, status FROM staff_account WHERE id = ? FOR UPDATE",
+                (rs, rowNum) -> new ManagedStaff(
+                        rs.getObject("id", UUID.class), rs.getString("login"), rs.getString("status")),
+                staffId).stream().findFirst().orElse(null);
+    }
+
+    public int countOtherActiveOwners(UUID excludedStaffId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM staff_role r JOIN staff_account s ON s.id = r.staff_id "
+                        + "WHERE r.role = 'OWNER' AND s.status = 'ACTIVE' AND s.id <> ?",
+                Integer.class, excludedStaffId);
+    }
+
+    public void replaceRoles(UUID staffId, UUID assignedBy, Set<String> roles) {
+        jdbcTemplate.update("DELETE FROM staff_role WHERE staff_id = ?", staffId);
+        for (String role : roles) {
+            jdbcTemplate.update(
+                    "INSERT INTO staff_role (staff_id, role, assigned_by) VALUES (?, ?, ?)",
+                    staffId, role, assignedBy);
+        }
+        jdbcTemplate.update(
+                "UPDATE staff_account SET auth_version = auth_version + 1, updated_at = clock_timestamp() WHERE id = ?",
+                staffId);
+    }
+
+    public boolean changeStaffStatus(UUID staffId, String status) {
+        return jdbcTemplate.update(
+                "UPDATE staff_account SET status = ?, auth_version = auth_version + 1, "
+                        + "updated_at = clock_timestamp() WHERE id = ?",
+                status, staffId) == 1;
+    }
+
+    public List<String> rolesForManagement(UUID staffId) {
+        return jdbcTemplate.queryForList(
+                "SELECT role FROM staff_role WHERE staff_id = ? ORDER BY role", String.class, staffId);
+    }
+
+    public ManagedStaff findOwnerByLogin(String normalizedLogin) {
+        return jdbcTemplate.query(
+                "SELECT s.id, s.login, s.status FROM staff_account s "
+                        + "JOIN staff_role r ON r.staff_id = s.id AND r.role = 'OWNER' "
+                        + "WHERE s.login_normalized = ? FOR UPDATE OF s",
+                (rs, rowNum) -> new ManagedStaff(
+                        rs.getObject("id", UUID.class), rs.getString("login"), rs.getString("status")),
+                normalizedLogin).stream().findFirst().orElse(null);
+    }
+
+    public boolean ownerRecoveryAlreadyUsed(UUID ownerId) {
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
+                "SELECT EXISTS (SELECT 1 FROM audit_event WHERE action = 'staff.owner.recovered' "
+                        + "AND subject_kind = 'STAFF' AND subject_id = ?)",
+                Boolean.class, ownerId.toString()));
+    }
+
+    public void recoverOwner(UUID ownerId, String passwordHash) {
+        jdbcTemplate.update(
+                "UPDATE staff_account SET password_hash = ?, status = 'PENDING', "
+                        + "auth_version = auth_version + 1, password_changed_at = clock_timestamp(), "
+                        + "updated_at = clock_timestamp() WHERE id = ?",
+                passwordHash, ownerId);
+        jdbcTemplate.update("DELETE FROM staff_totp_credential WHERE staff_id = ?", ownerId);
+        jdbcTemplate.update("DELETE FROM staff_recovery_code WHERE staff_id = ?", ownerId);
+        jdbcTemplate.update("DELETE FROM staff_auth_challenge WHERE staff_id = ?", ownerId);
+    }
+
+    public record ManagedStaff(UUID id, String login, String status) {
     }
 
     public List<RecoveryCode> lockRecoveryCodes(UUID staffId) {

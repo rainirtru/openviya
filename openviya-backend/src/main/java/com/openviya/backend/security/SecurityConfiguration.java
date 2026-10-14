@@ -53,6 +53,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/actuator/health/**", "/actuator/info", "/api/v1").permitAll()
                         .requestMatchers("/api/v1/staff/auth/**").permitAll()
                         .requestMatchers("/api/v1/admin/owner/**").hasRole("OWNER")
+                        .requestMatchers("/api/v1/admin/staff/**").hasRole("OWNER")
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")
                         .requestMatchers("/api/v1/support/**").hasAnyRole("OWNER", "ADMIN", "SUPPORT")
                         .anyRequest().denyAll())

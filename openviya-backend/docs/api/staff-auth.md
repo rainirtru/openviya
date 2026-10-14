@@ -1,6 +1,57 @@
 # Staff authentication
 
-All write requests, including unauthenticated login challenges, require the CSRF token returned by `GET /api/v1/staff/auth/csrf`. Send the returned token in the header named by `headerName` (currently `X-CSRF-TOKEN`) and retain the `OPENVIYA_SESSION` cookie.
+All write requests, including unauthenticated login challenges and owner administration, require the CSRF token returned by `GET /api/v1/staff/auth/csrf`. Send it in the header named by `headerName` (currently `X-CSRF-TOKEN`) and retain the `OPENVIYA_SESSION` cookie.
+
+## Owner staff administration
+
+All routes below require an authenticated `OWNER` session and the CSRF header described above. Administrative requests require a non-empty `reason`; it is stored with the audit event. Passwords must be at least 16 characters and no more than 72 UTF-8 bytes. Supported roles are `OWNER`, `ADMIN`, and `SUPPORT`.
+
+### Create a staff account
+
+`POST /api/v1/admin/staff`
+
+```json
+{
+  "login": "operator",
+  "password": "a-long-one-time-password",
+  "roles": ["SUPPORT"],
+  "reason": "Support onboarding"
+}
+```
+
+Creates a `PENDING` account. The staff member must complete TOTP enrollment on first login. Duplicate normalized logins return `409 STAFF_LOGIN_ALREADY_EXISTS`.
+
+### Replace roles
+
+`PUT /api/v1/admin/staff/{id}/roles`
+
+```json
+{
+  "roles": ["ADMIN"],
+  "reason": "Approved role change"
+}
+```
+
+This replaces the complete role set and increments `auth_version`, invalidating existing sessions. Removing the last active owner's `OWNER` role returns `409 LAST_ACTIVE_OWNER_REQUIRED`.
+
+### Change status
+
+`PATCH /api/v1/admin/staff/{id}/status`
+
+```json
+{
+  "status": "LOCKED",
+  "reason": "Temporary access suspension"
+}
+```
+
+Accepted statuses are `ACTIVE`, `LOCKED`, and `DISABLED`. Changing status increments `auth_version`. The last active owner cannot be locked or disabled.
+
+## One-time owner recovery
+
+For a lost owner password or second factor, set `OPENVIYA_OWNER_RECOVERY_ENABLED=true`, provide the existing owner's login and a new one-time password using `OPENVIYA_OWNER_RECOVERY_LOGIN` and `OPENVIYA_OWNER_RECOVERY_PASSWORD`, then start the application once. Recovery cannot run together with initial owner bootstrap, requires a matching active owner, and can only be used once per owner. It resets TOTP and recovery codes, sets the account to `PENDING`, and increments `auth_version` to revoke sessions. The next login must enroll TOTP again.
+
+Immediately disable recovery and remove its credentials from the runtime environment after successful startup. A repeated recovery attempt fails closed. The action is written to the audit log as a system event; neither the password nor 2FA secrets are recorded.
 
 ## Initial owner
 
@@ -19,4 +70,4 @@ Password login is limited to 10 attempts per account and 30 per source address p
 
 Sessions are stored in PostgreSQL, expire after 30 minutes by default, use an HttpOnly `OPENVIYA_SESSION` cookie scoped to `/api/v1`, and are rechecked against current staff status, role set, and `auth_version` on requests. Production must use HTTPS and set `OPENVIYA_SESSION_COOKIE_SECURE=true`.
 
-This contract covers staff login only. Telegram user login, employee management, role assignment, and owner recovery remain future API work.
+Telegram user login and the corresponding external identity contract remain future API work.

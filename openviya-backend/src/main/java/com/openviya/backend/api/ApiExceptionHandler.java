@@ -2,6 +2,7 @@ package com.openviya.backend.api;
 
 import jakarta.servlet.http.HttpServletRequest;
 import com.openviya.backend.security.StaffAuthException;
+import com.openviya.backend.security.StaffAdminException;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,12 @@ public class ApiExceptionHandler {
                 exception.code(),
                 "Не удалось выполнить вход сотрудника.",
                 request);
+    }
+
+    @ExceptionHandler(StaffAdminException.class)
+    public ResponseEntity<ApiError> handleStaffAdmin(StaffAdminException exception, HttpServletRequest request) {
+        return response(
+                exception.status(), exception.code(), "Не удалось выполнить операцию с учетной записью.", request);
     }
 
     @ExceptionHandler(Exception.class)
