@@ -53,8 +53,7 @@ public class TelegramOidcSuccessHandler implements AuthenticationSuccessHandler 
 
         try {
             var claims = oidcUser.getIdToken().getClaims();
-            Object telegramIdClaim = claims.get("id");
-            String telegramId = telegramIdClaim == null ? null : telegramIdClaim.toString();
+            String telegramId = TelegramProfile.numericUserIdFromOidcClaim(claims.get("id"));
             String username = stringClaim(claims.get("preferred_username"));
             String displayName = stringClaim(claims.get("name"));
             if (displayName == null) {
