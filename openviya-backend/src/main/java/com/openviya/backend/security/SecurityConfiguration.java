@@ -63,6 +63,8 @@ public class SecurityConfiguration {
                                 "/api/v1/internal/telegram/identity/resolve",
                                 "/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/v1/me", "/api/v1/me/**").hasRole("USER")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/trials/claim").hasRole("USER")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/access-operations/**").hasRole("USER")
                         .requestMatchers("/api/v1/admin/owner/**").hasRole("OWNER")
                         .requestMatchers("/api/v1/admin/staff/**").hasRole("OWNER")
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")

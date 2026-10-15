@@ -3,6 +3,7 @@ package com.openviya.backend.api;
 import jakarta.servlet.http.HttpServletRequest;
 import com.openviya.backend.security.StaffAuthException;
 import com.openviya.backend.security.StaffAdminException;
+import com.openviya.backend.subscriptions.TrialClaimException;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,12 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiError> handleStaffAdmin(StaffAdminException exception, HttpServletRequest request) {
         return response(
                 exception.status(), exception.code(), "Не удалось выполнить операцию с учетной записью.", request);
+    }
+
+    @ExceptionHandler(TrialClaimException.class)
+    public ResponseEntity<ApiError> handleTrialClaim(TrialClaimException exception, HttpServletRequest request) {
+        return response(
+                exception.status(), exception.code(), "Не удалось выполнить операцию доступа.", request);
     }
 
     @ExceptionHandler(Exception.class)
