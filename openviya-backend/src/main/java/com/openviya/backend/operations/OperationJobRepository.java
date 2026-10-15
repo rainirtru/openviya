@@ -1,5 +1,6 @@
 package com.openviya.backend.operations;
 
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -128,7 +129,7 @@ public class OperationJobRepository {
 
     public boolean scheduleRetry(ClaimedOperationJob job, Instant nextAttemptAt, String errorCode) {
         MapSqlParameterSource parameters = leaseParameters(job)
-                .addValue("nextAttemptAt", nextAttemptAt)
+                .addValue("nextAttemptAt", Timestamp.from(nextAttemptAt))
                 .addValue("errorCode", errorCode);
         return jdbc.update("""
                 UPDATE operation_job

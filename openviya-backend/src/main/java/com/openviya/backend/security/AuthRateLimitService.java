@@ -3,6 +3,7 @@ package com.openviya.backend.security;
 import com.openviya.backend.audit.AuditActor;
 import com.openviya.backend.audit.AuditEventRepository;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
@@ -66,7 +67,8 @@ public class AuthRateLimitService {
         jdbcTemplate.update(
                 "UPDATE auth_rate_limit SET window_start = ?, attempts = ?, blocked_until = ?, "
                         + "updated_at = clock_timestamp() WHERE bucket_key = ?",
-                windowStart, nextAttempts, blockedUntil, bucketKey);
+                Timestamp.from(windowStart), nextAttempts,
+                blockedUntil == null ? null : Timestamp.from(blockedUntil), bucketKey);
         if (nextAttempts > maxAttempts) {
             auditEvents.append(
                     new AuditActor(AuditActor.Kind.SYSTEM, null),

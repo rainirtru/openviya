@@ -2,6 +2,7 @@ package com.openviya.backend.subscriptions;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -59,19 +60,20 @@ public class SubscriptionActivationService {
                 UPDATE subscription_grant
                 SET state = 'ACTIVE', starts_at = ?, ends_at = ?, confirmed_at = ?
                 WHERE id = ? AND state = 'PENDING'
-                """, confirmedAt, end, confirmedAt, activation.grantId());
+                """, Timestamp.from(confirmedAt), Timestamp.from(end), Timestamp.from(confirmedAt),
+                activation.grantId());
         int subscriptionUpdated = jdbc.update("""
                 UPDATE user_subscription
                 SET state = 'ACTIVE', ends_at = ?, device_limit = ?, version = version + 1,
                     updated_at = clock_timestamp()
                 WHERE id = ? AND state = 'PENDING'
-                """, end, SubscriptionTime.TRIAL_DEVICE_LIMIT, activation.subscriptionId());
+                """, Timestamp.from(end), SubscriptionTime.TRIAL_DEVICE_LIMIT, activation.subscriptionId());
         int claimUpdated = jdbc.update("""
                 UPDATE trial_claim
                 SET state = 'ACTIVE', activated_at = ?, last_error_code = NULL,
                     updated_at = clock_timestamp()
                 WHERE id = ? AND state IN ('REQUESTED', 'ISSUING', 'FAILED')
-                """, confirmedAt, trialClaimId);
+                """, Timestamp.from(confirmedAt), trialClaimId);
         if (grantUpdated != 1 || subscriptionUpdated != 1 || claimUpdated != 1) {
             throw new SubscriptionActivationException("TRIAL_ACTIVATION_CONFLICT");
         }
@@ -92,7 +94,7 @@ public class SubscriptionActivationService {
                 WHERE id = ? AND source_type IN ('PURCHASE', 'PROMO')
                   AND state IN ('PENDING', 'ACTIVE')
                   AND (? = FALSE OR source_type = 'PURCHASE')
-                """, confirmedAt, paid, confirmedAt, grantId, paid);
+                """, Timestamp.from(confirmedAt), paid, Timestamp.from(confirmedAt), grantId, paid);
         if (updated != 1) {
             throw new SubscriptionActivationException("SUBSCRIPTION_GRANT_CONFIRMATION_REJECTED");
         }
@@ -159,13 +161,13 @@ public class SubscriptionActivationService {
                 UPDATE subscription_grant
                 SET state = 'ACTIVE', starts_at = ?, ends_at = ?
                 WHERE id = ? AND state = 'PENDING'
-                """, start, end, grant.grantId());
+                """, Timestamp.from(start), Timestamp.from(end), grant.grantId());
         int subscriptionUpdated = jdbc.update("""
                 UPDATE user_subscription
                 SET state = 'ACTIVE', ends_at = ?, device_limit = ?, version = version + 1,
                     updated_at = clock_timestamp()
                 WHERE id = ? AND state IN ('INACTIVE', 'ACTIVE', 'EXPIRED')
-                """, end, SubscriptionTime.STANDARD_DEVICE_LIMIT, grant.subscriptionId());
+                """, Timestamp.from(end), SubscriptionTime.STANDARD_DEVICE_LIMIT, grant.subscriptionId());
         if (grantUpdated != 1 || subscriptionUpdated != 1) {
             throw new SubscriptionActivationException("SUBSCRIPTION_GRANT_ACTIVATION_CONFLICT");
         }
