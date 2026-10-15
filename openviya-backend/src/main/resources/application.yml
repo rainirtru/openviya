@@ -73,6 +73,13 @@ openviya:
     poll-interval: ${OPENVIYA_QUEUE_POLL_INTERVAL:1s}
     batch-size: ${OPENVIYA_QUEUE_BATCH_SIZE:20}
     lease-duration: ${OPENVIYA_QUEUE_LEASE_DURATION:30s}
+  integrations:
+    three-x-ui:
+      enabled: ${OPENVIYA_3XUI_ENABLED:false}
+      admin-base-uri: ${OPENVIYA_3XUI_ADMIN_BASE_URI:http://localhost:2053/}
+      bearer-token: ${OPENVIYA_3XUI_BEARER_TOKEN:}
+      connect-timeout: ${OPENVIYA_3XUI_CONNECT_TIMEOUT:3s}
+      read-timeout: ${OPENVIYA_3XUI_READ_TIMEOUT:5s}
 
 logging:
   pattern:
