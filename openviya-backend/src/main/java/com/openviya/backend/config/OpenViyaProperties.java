@@ -17,5 +17,17 @@ public record OpenViyaProperties(
             @NotNull Duration pollInterval,
             int batchSize,
             @NotNull Duration leaseDuration) {
+
+        public Queue {
+            if (pollInterval == null || pollInterval.isZero() || pollInterval.isNegative()) {
+                throw new IllegalArgumentException("Queue poll interval must be positive.");
+            }
+            if (batchSize < 1) {
+                throw new IllegalArgumentException("Queue batch size must be positive.");
+            }
+            if (leaseDuration == null || leaseDuration.isZero() || leaseDuration.isNegative()) {
+                throw new IllegalArgumentException("Queue lease duration must be positive.");
+            }
+        }
     }
 }

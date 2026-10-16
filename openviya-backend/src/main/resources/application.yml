@@ -70,6 +70,7 @@ openviya:
       redirect-uri: ${OPENVIYA_TELEGRAM_OIDC_REDIRECT_URI:}
       bot-service-token: ${OPENVIYA_TELEGRAM_BOT_SERVICE_TOKEN:}
   queue:
+    worker-enabled: ${OPENVIYA_QUEUE_WORKER_ENABLED:false}
     poll-interval: ${OPENVIYA_QUEUE_POLL_INTERVAL:1s}
     batch-size: ${OPENVIYA_QUEUE_BATCH_SIZE:20}
     lease-duration: ${OPENVIYA_QUEUE_LEASE_DURATION:30s}
