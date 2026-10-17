@@ -1,6 +1,7 @@
 using OpenViya.Ops.Core;
 using OpenViya.Ops.Provisioning;
 using OpenViya.Ops.Storage;
+using OpenViya.Ops.Remote;
 using System.Windows;
 
 namespace OpenViya.Ops.Desktop;
@@ -13,10 +14,12 @@ public partial class MainWindow
 
         // Maintenance calls use the profile's existing administrative identity and the already-pinned
         // application known_hosts key. No discovery scan or first-use auto-trust is performed here.
-        var service = new ServerMaintenanceService(_paths,
-            new SshNetVpsSessionFactory(TimeSpan.FromMinutes(6)));
+        IVpsServerMaintenanceService service = _remoteClient is null
+            ? new ServerMaintenanceService(_paths, new SshNetVpsSessionFactory(TimeSpan.FromMinutes(6)))
+            : new RemoteVpsMaintenanceService(_remoteClient);
         var window = new ServerMaintenanceWindow(profile, service, _store, _serverStates,
-            HasActiveMaintenanceTunnel, StopMaintenanceTunnelAsync, ReloadMaintenanceProfileAsync)
+            HasActiveMaintenanceTunnel, StopMaintenanceTunnelAsync, ReloadMaintenanceProfileAsync,
+            serverManagedAccess: _remoteClient is not null)
         {
             Owner = this
         };

@@ -1,0 +1,53 @@
+<Window x:Class="OpenViya.Ops.Desktop.RemoteConnectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Общее хранилище OpenViya Ops" Width="660" Height="610"
+        MinWidth="560" MinHeight="540" WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize" Background="{StaticResource Canvas}" Foreground="{StaticResource Ink}"
+        FontFamily="Segoe UI Variable, Segoe UI">
+  <Grid Margin="24">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel Grid.Row="0">
+      <TextBlock Text="Хранилище профилей" FontSize="23" FontWeight="SemiBold"/>
+      <TextBlock Text="Профили, наблюдения, DNS-записи и настройка VPS будут храниться на выбранном устройстве-сервере. SSH-туннели и системный hosts остаются на этом ПК." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,18" LineHeight="20"/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <StackPanel>
+        <TextBlock Text="РЕЖИМ" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="SemiBold"/>
+        <ComboBox x:Name="ModeBox" Margin="0,7,0,14" SelectionChanged="ModeBox_SelectionChanged">
+          <ComboBoxItem Content="Только этот компьютер" Tag="local"/>
+          <ComboBoxItem Content="Общий сервер в локальной сети" Tag="remote"/>
+        </ComboBox>
+        <StackPanel x:Name="RemoteFields">
+          <TextBlock Text="HTTPS адрес сервера" Foreground="{StaticResource Muted}" FontSize="12"/>
+          <TextBox x:Name="UrlBox" Text="https://192.168.1.10:8444" TextChanged="ConnectionField_Changed"/>
+          <TextBlock Text="SHA-256 fingerprint TLS-сертификата" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,12,0,0"/>
+          <TextBox x:Name="FingerprintBox" FontFamily="Cascadia Mono, Consolas" TextChanged="ConnectionField_Changed"/>
+          <TextBlock Text="Токен доступа" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,12,0,0"/>
+          <PasswordBox x:Name="TokenBox"/>
+          <TextBox x:Name="TokenRevealBox" Visibility="Collapsed"/>
+          <CheckBox x:Name="RevealTokenBox" Content="Показать токен" AutomationProperties.Name="Показать или скрыть токен доступа" Checked="RevealToken_Changed" Unchecked="RevealToken_Changed"/>
+          <TextBlock Text="Токен хранится только в DPAPI-защищённых настройках этого пользователя Windows. Соединение принимается только при совпадении fingerprint." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,7,0,0"/>
+          <Button x:Name="TestButton" Content="Проверить защищённое соединение" Click="Test_Click" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+          <Border BorderBrush="{StaticResource Line}" BorderThickness="1" Background="{StaticResource Surface}" Padding="12" Margin="0,16,0,0">
+            <StackPanel>
+              <TextBlock Text="Перенос локальных профилей" FontWeight="SemiBold"/>
+              <TextBlock x:Name="MigrationSummary" Text="Сначала проверьте соединение. Локальные данные останутся на этом компьютере." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,8"/>
+              <CheckBox x:Name="IncludePanelPathsBox" Content="Включить сохранённые пути панелей (чувствительные данные)" IsChecked="False"/>
+              <CheckBox x:Name="IncludePanelCredentialsBox" Content="Включить сохранённые учётные данные панели (чувствительные данные)" IsChecked="False"/>
+              <CheckBox x:Name="IncludeSshKeysBox" Content="Загрузить закрытые SSH-ключи профилей в зашифрованное хранилище сервера" IsChecked="False"/>
+              <CheckBox x:Name="IncludeDnsTokenBox" Content="Передать токен Timeweb DNS на сервер для удалённой настройки DNS" IsChecked="False"/>
+              <CheckBox x:Name="IncludeTrustedHostKeysBox" Content="Передать явно принятые SSH host keys на сервер" IsChecked="False"/>
+              <Button x:Name="MigrateButton" Content="Скопировать профили на сервер…" Click="Migrate_Click" HorizontalAlignment="Left" Margin="0,10,0,0" IsEnabled="False"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+        <TextBlock x:Name="StatusText" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,14,0,0"/>
+      </StackPanel>
+    </ScrollViewer>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+      <Button Content="Закрыть" IsCancel="True" MinWidth="90"/>
+      <Button x:Name="SaveButton" Content="Сохранить для следующего запуска" Click="Save_Click" IsDefault="True" Margin="8,0,0,0" MinWidth="210" Background="{StaticResource Blue}"/>
+    </StackPanel>
+  </Grid>
+</Window>

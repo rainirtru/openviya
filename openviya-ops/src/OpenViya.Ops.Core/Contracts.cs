@@ -32,6 +32,8 @@ public sealed record ServerProfile
     public int VpnPort { get; init; } = 443;
     public Guid? ControlServerId { get; init; }
     public DateTimeOffset UpdatedAt { get; init; } = DateTimeOffset.UtcNow;
+    // Optimistic concurrency version used by the shared LAN registry; zero for new/local profiles.
+    public long Revision { get; init; }
 }
 
 public sealed record AppPaths(string Root)

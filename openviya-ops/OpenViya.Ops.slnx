@@ -7,4 +7,6 @@
   <Project Path="src/OpenViya.Ops.Provisioning/OpenViya.Ops.Provisioning.csproj" />
   <Project Path="src/OpenViya.Ops.HostsHelper/OpenViya.Ops.HostsHelper.csproj" />
   <Project Path="src/OpenViya.Ops.Desktop/OpenViya.Ops.Desktop.csproj" />
+  <Project Path="src/OpenViya.Ops.Remote/OpenViya.Ops.Remote.csproj" />
+  <Project Path="src/OpenViya.Ops.Server/OpenViya.Ops.Server.csproj" />
 </Solution>

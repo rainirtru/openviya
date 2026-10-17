@@ -12,6 +12,7 @@
     <ProjectReference Include="..\OpenViya.Ops.Network\OpenViya.Ops.Network.csproj" />
     <ProjectReference Include="..\OpenViya.Ops.Dns\OpenViya.Ops.Dns.csproj" />
     <ProjectReference Include="..\OpenViya.Ops.Provisioning\OpenViya.Ops.Provisioning.csproj" />
+    <ProjectReference Include="..\OpenViya.Ops.Remote\OpenViya.Ops.Remote.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="PanelOpeningChecks" />
