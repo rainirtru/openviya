@@ -1,6 +1,6 @@
 # OpenViya Ops LAN server
 
-This ASP.NET Core 10 service is the shared profile store and LAN-side VPS executor. The WinUI clients call it over the home network; all VPS SSH sessions, DNS provider calls, and durable jobs run in this service. The server image listens on `http://+:8080`; terminate HTTPS at the LAN reverse proxy and expose the proxy only on the chosen LAN address.
+This ASP.NET Core 10 service is the shared profile store and LAN-side VPS executor. The WPF clients call it over the home network; provisioning/maintenance SSH sessions, DNS provider calls, and durable jobs run in this service. Interactive SSH terminals, panel tunnels, and hosts changes remain local to each desktop. The server image listens on `http://+:8080`; terminate HTTPS at the LAN reverse proxy and expose the proxy only on the chosen LAN address.
 
 ## Required configuration
 
