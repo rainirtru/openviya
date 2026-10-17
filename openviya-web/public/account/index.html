@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102d32">
+  <title>Личный кабинет — OpenViya</title>
+  <link rel="stylesheet" href="/assets/site.css">
+  <script src="/assets/account.js" defer></script>
+</head>
+<body class="account-page">
+  <a class="skip-link" href="#main">К основному содержимому</a>
+  <header class="site-header account-header">
+    <a class="brand" href="https://openviya.online/" aria-label="OpenViya — главная"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>openviya</span></a>
+    <nav class="header-nav" aria-label="Основная навигация"><a href="https://openviya.online/">О сервисе</a><button class="header-action" id="logout-button" type="button" disabled>Выйти <span aria-hidden="true">↗</span></button></nav>
+  </header>
+  <main class="account-main" id="main">
+    <div class="account-heading">
+      <div><p class="eyebrow eyebrow-dark">OPENVIYA / АККАУНТ</p><h1>Личный кабинет</h1></div>
+      <button class="refresh-button" id="refresh-button" type="button" disabled><span aria-hidden="true">↻</span> Обновить</button>
+    </div>
+    <div id="page-message" class="page-message" role="status" aria-live="polite" hidden></div>
+
+    <section class="account-grid" aria-label="Данные аккаунта">
+      <article class="panel profile-panel" aria-labelledby="profile-title">
+        <div class="panel-topline"><h2 id="profile-title">Аккаунт</h2></div>
+        <div id="profile-state" class="panel-state" aria-live="polite"><span class="loading-mark" aria-hidden="true"></span> Загружаем профиль…</div>
+        <div id="profile-content" hidden>
+          <div class="profile-avatar" id="profile-avatar" aria-hidden="true">OV</div>
+          <h3 id="profile-name" class="profile-name"></h3>
+          <p id="profile-handle" class="profile-handle"></p>
+          <div class="profile-id"><span>Telegram ID</span><code id="telegram-id"></code></div>
+        </div>
+      </article>
+
+      <article class="panel subscription-panel" aria-labelledby="subscription-title">
+        <div class="panel-topline"><h2 id="subscription-title">Подписка</h2></div>
+        <div id="subscription-state" class="panel-state" aria-live="polite"><span class="loading-mark" aria-hidden="true"></span> Загружаем состояние…</div>
+        <div id="subscription-content" hidden>
+          <div class="subscription-summary">
+            <span class="state-label" id="subscription-label"></span>
+            <span class="access-mark" id="access-mark" aria-hidden="true"></span>
+          </div>
+          <p class="subscription-detail" id="subscription-detail"></p>
+          <dl class="subscription-facts">
+            <div><dt>Доступ устройств</dt><dd id="device-limit">—</dd></div>
+            <div><dt>Пробный доступ</dt><dd id="trial-used">—</dd></div>
+            <div><dt>Покупка подтверждена</dt><dd id="paid-confirmed">—</dd></div>
+          </dl>
+          <div class="grants-block" id="grants-block" hidden><h3>Начисления</h3><ol id="grant-list" class="grant-list"></ol></div>
+        </div>
+      </article>
+    </section>
+
+    <p class="account-footnote">Здесь можно посмотреть подписку и историю начислений.</p>
+  </main>
+  <footer class="site-footer account-footer"><a class="brand brand-footer" href="https://openviya.online/" aria-label="OpenViya — главная"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>openviya</span></a><span>OpenViya · личный кабинет</span><a href="https://openviya.online/">На главную <span aria-hidden="true">↗</span></a></footer>
+</body>
+</html>
