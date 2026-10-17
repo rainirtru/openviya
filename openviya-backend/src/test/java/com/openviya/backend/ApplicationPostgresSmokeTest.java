@@ -61,7 +61,8 @@ class ApplicationPostgresSmokeTest {
         properties.add("openviya.auth.bootstrap-owner.login", () -> "integration-owner");
         properties.add("openviya.auth.bootstrap-owner.password", () -> BOOTSTRAP_PASSWORD);
         properties.add("openviya.auth.totp-encryption-key", () -> TOTP_KEY);
-        properties.add("spring.servlet.session.cookie.secure", () -> false);
+        // The embedded test server uses HTTP; production still requires Secure cookies.
+        properties.add("server.servlet.session.cookie.secure", () -> false);
     }
 
     @Autowired
@@ -165,19 +166,25 @@ class ApplicationPostgresSmokeTest {
         CookieManager cookies = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
         HttpClient client = HttpClient.newBuilder().cookieHandler(cookies).build();
         JsonMapper json = JsonMapper.builder().build();
-        JsonNode csrfResponse = json.readTree(send(client, "GET", "/api/v1/staff/auth/csrf", null, null, null).body());
+        HttpResponse<String> csrf = send(client, "GET", "/api/v1/staff/auth/csrf", null, null, null);
+        assertEquals(200, csrf.statusCode(), csrf.body());
+        assertTrue(cookies.getCookieStore().getCookies().stream()
+                .anyMatch(cookie -> cookie.getName().equals("SESSION") && !cookie.getSecure()),
+                "The HTTP test client must receive a non-Secure session cookie for CSRF and login");
+        JsonNode csrfResponse = json.readTree(csrf.body());
         String headerName = csrfResponse.get("headerName").stringValue();
         String csrfToken = csrfResponse.get("token").stringValue();
 
         HttpResponse<String> passwordStep = send(client, "POST", "/api/v1/staff/auth/login",
                 "{\"login\":\"integration-owner\",\"password\":\"" + BOOTSTRAP_PASSWORD + "\"}",
                 headerName, csrfToken);
-        assertEquals(200, passwordStep.statusCode());
+        assertEquals(200, passwordStep.statusCode(), passwordStep.body());
         HttpResponse<String> beforeTotp = send(client, "POST", "/api/v1/admin/staff",
                 "{\"login\":\"premature-admin\",\"password\":\"another-strong-test-password\","
                         + "\"roles\":[\"ADMIN\"],\"reason\":\"Must remain unauthenticated\"}",
                 headerName, csrfToken);
-        assertEquals(403, beforeTotp.statusCode());
+        assertEquals(401, beforeTotp.statusCode(), beforeTotp.body());
+        assertEquals("UNAUTHORIZED", json.readTree(beforeTotp.body()).get("code").stringValue());
         assertEquals(0, jdbc.queryForObject(
                 "SELECT count(*) FROM staff_account WHERE login_normalized = 'premature-admin'", Integer.class));
         String challengeId = json.readTree(passwordStep.body()).get("challengeId").stringValue();
