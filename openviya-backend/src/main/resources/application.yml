@@ -15,19 +15,19 @@ spring:
     timeout: ${OPENVIYA_SESSION_TIMEOUT:30m}
     jdbc:
       initialize-schema: never
-  servlet:
-    session:
-      cookie:
-        name: OPENVIYA_SESSION
-        path: /api/v1
-        http-only: true
-        secure: ${OPENVIYA_SESSION_COOKIE_SECURE:true}
-        same-site: lax
   lifecycle:
     timeout-per-shutdown-phase: 20s
 
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      cookie:
+        name: SESSION
+        path: /
+        http-only: true
+        secure: ${OPENVIYA_SESSION_COOKIE_SECURE:true}
+        same-site: lax
   shutdown: graceful
 
 management:
