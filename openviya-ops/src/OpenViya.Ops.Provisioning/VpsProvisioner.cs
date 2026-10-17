@@ -198,7 +198,7 @@ public sealed class VpsProvisioner : IVpsProvisioner
                 await WaitJob(admin, "sudo -n ", helper, request.RunId, "finalize", _timing.FinalizeTimeout, cancellationToken, observation => Report(VpsProvisionStage.InstallingPanel, observation.Message, observation.StepId, observation.State, observation.ContactAt, observation.NextPollAt)).ConfigureAwait(false);
             }
 
-            await Report(VpsProvisionStage.RetrievingCredentials, "Получение данных панели по проверенному SSH-каналу и шифрование локального хранения.").ConfigureAwait(false);
+            await Report(VpsProvisionStage.RetrievingCredentials, "Получение данных панели по проверенному SSH-каналу и сохранение в защищённом хранилище.").ConfigureAwait(false);
             var finalState = await InspectVps(admin, "sudo -n ", helper, profile, cancellationToken).ConfigureAwait(false);
             if (finalState.Phase != "complete") throw new SetupException("Сервер не подтвердил завершение установки; данные панели не сохранены.");
             var response = await admin.ExecuteAsync("sudo -n " + Quote(helper) + " desktop-credentials", cancellationToken).ConfigureAwait(false);

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>OpenViya.Ops.Server</AssemblyName>
+    <RootNamespace>OpenViya.Ops.Server</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../OpenViya.Ops.Core/OpenViya.Ops.Core.csproj" />
+    <ProjectReference Include="../OpenViya.Ops.Provisioning/OpenViya.Ops.Provisioning.csproj" />
+    <ProjectReference Include="../OpenViya.Ops.Dns/OpenViya.Ops.Dns.csproj" />
+    <ProjectReference Include="../OpenViya.Ops.Network/OpenViya.Ops.Network.csproj" />
+    <PackageReference Include="Npgsql" Version="9.0.4" />
+  </ItemGroup>
+</Project>

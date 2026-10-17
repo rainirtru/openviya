@@ -1,12 +1,14 @@
 using System.Diagnostics;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Runtime.Versioning;
 using OpenViya.Ops.Core;
 using Renci.SshNet;
 
 namespace OpenViya.Ops.Provisioning;
 
 /// <summary>Loads a selected Ed25519 admin key or creates a dedicated, protected OpenSSH key for the server.</summary>
+[SupportedOSPlatform("windows")]
 public sealed class VpsAdminKeyService(AppPaths paths) : IVpsKeyService
 {
     private static readonly TimeSpan KeyGenerationTimeout = TimeSpan.FromSeconds(15);
