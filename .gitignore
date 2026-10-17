@@ -18,6 +18,10 @@ out/
 *.sql.gz
 postgres-data/
 volumes/
+ops/lan/.secrets/
+ops/lan/certs/
+ops/lan/.env
+ops/lan/*.dump
 
 # IDE and operating-system files
 .idea/
