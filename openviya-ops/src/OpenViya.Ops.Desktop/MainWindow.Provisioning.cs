@@ -1,6 +1,7 @@
 using OpenViya.Ops.Core;
 using OpenViya.Ops.Provisioning;
 using OpenViya.Ops.Storage;
+using OpenViya.Ops.Remote;
 using System.Windows;
 
 namespace OpenViya.Ops.Desktop;
@@ -14,10 +15,12 @@ public partial class MainWindow
 
     private void InitializeProvisioning(IVpsProvisioner? provisioner, IVpsProvisionStore? provisionStore, bool smokeMode)
     {
-        _vpsProvisionStore = provisionStore ?? (smokeMode ? new SmokeProvisionStore() : new DpapiVpsProvisionStore(_paths));
+        _vpsProvisionStore = provisionStore ?? (smokeMode ? new SmokeProvisionStore() : _remoteConfig is null ? new DpapiVpsProvisionStore(_paths) : new RemoteProvisionStore(_remoteClient!));
         _vpsProvisioner = provisioner ?? (smokeMode
             ? new SmokeProvisioner()
-            : new VpsProvisioner(_paths, _store, _vpsProvisionStore, new SshNetVpsSessionFactory(), new VpsAdminKeyService(_paths), _dnsProvider, _publicDns));
+            : _remoteConfig is null
+                ? new VpsProvisioner(_paths, _store, _vpsProvisionStore, new SshNetVpsSessionFactory(), new VpsAdminKeyService(_paths), _dnsProvider, _publicDns)
+                : new RemoteVpsProvisioner(_remoteClient!));
     }
 
     private async void ProvisionNew_Click(object sender, RoutedEventArgs e)
@@ -118,7 +121,9 @@ public partial class MainWindow
             if (_selected?.Id == serverId)
             {
                 _selectedProvisionRun = null;
-                RenderProvisionCard("Состояние настройки не удалось прочитать из локального хранилища.");
+                RenderProvisionCard(_remoteClient is null
+                    ? "Состояние настройки не удалось прочитать из локального хранилища."
+                    : "Состояние серверной задачи временно недоступно. Проверьте соединение с LAN-сервером.");
             }
         }
     }

@@ -1,4 +1,5 @@
 using OpenViya.Ops.Core;
+using OpenViya.Ops.Remote;
 using System.Windows;
 
 namespace OpenViya.Ops.Desktop;
@@ -7,6 +8,7 @@ public partial class DnsSettingsWindow : Window
 {
     private readonly IDnsTokenStore _tokens;
     private readonly IDnsProviderService _provider;
+    private readonly bool _serverManaged;
     private readonly CancellationTokenSource _lifetime = new();
     private bool _busy;
 
@@ -15,6 +17,11 @@ public partial class DnsSettingsWindow : Window
         InitializeComponent();
         _tokens = tokens;
         _provider = provider;
+        _serverManaged = tokens is RemoteDnsTokenStore;
+        StorageHelpText.Text = _serverManaged
+            ? "Токен хранится в зашифрованном хранилище LAN-сервера. Здесь показывается только состояние; значение не загружается на это устройство. Проверка зоны выполняет только чтение."
+            : "Токен хранится локально, зашифрованный DPAPI для текущего пользователя Windows. Проверка зоны выполняет только чтение.";
+        SaveTokenButton.Content = _serverManaged ? "Зашифровать и сохранить на сервере" : "Зашифровать и сохранить";
         Loaded += async (_, _) => await RefreshTokenStateAsync();
         Closed += (_, _) => _lifetime.Cancel();
     }
@@ -25,7 +32,7 @@ public partial class DnsSettingsWindow : Window
         {
             TokenState.Text = await _tokens.LoadAsync(_lifetime.Token) is null
                 ? "Токен не сохранён."
-                : "Токен сохранён и зашифрован для текущего пользователя.";
+                : _serverManaged ? "Токен настроен на LAN-сервере. Его значение не передаётся этому устройству." : "Токен сохранён и зашифрован для текущего пользователя.";
         }
         catch (Exception)
         {
@@ -37,24 +44,25 @@ public partial class DnsSettingsWindow : Window
     {
         var value = TokenBox.Password;
         if (string.IsNullOrWhiteSpace(value)) { StatusText.Text = "Введите новый токен Timeweb."; return; }
-        await RunAsync("Сохраняем токен локально…", async ct =>
+        await RunAsync(_serverManaged ? "Сохраняем токен на LAN-сервере…" : "Сохраняем токен локально…", async ct =>
         {
             await _tokens.SaveAsync(value, ct);
             TokenBox.Clear();
-            TokenState.Text = "Токен сохранён и зашифрован для текущего пользователя.";
+            TokenState.Text = _serverManaged ? "Токен сохранён в зашифрованном хранилище LAN-сервера." : "Токен сохранён и зашифрован для текущего пользователя.";
             StatusText.Text = "Токен сохранён. Проверка API выполняется только по вашему действию.";
         });
     }
 
     private async void ClearToken_Click(object sender, RoutedEventArgs e)
     {
-        if (!OwnedDialog.Confirm(this, "Удалить токен Timeweb?", "Токен будет удалён из локального хранилища этого пользователя. Сохранённые профили не изменятся.", "Удалить токен")) return;
-        await RunAsync("Удаляем локальный токен…", async ct =>
+        var location = _serverManaged ? "зашифрованного хранилища LAN-сервера" : "локального хранилища этого пользователя";
+        if (!OwnedDialog.Confirm(this, "Удалить токен Timeweb?", $"Токен будет удалён из {location}. Сохранённые профили не изменятся.", "Удалить токен")) return;
+        await RunAsync(_serverManaged ? "Удаляем токен с LAN-сервера…" : "Удаляем локальный токен…", async ct =>
         {
             await _tokens.DeleteAsync(ct);
             TokenBox.Clear();
             TokenState.Text = "Токен не сохранён.";
-            StatusText.Text = "Локально сохранённый токен удалён.";
+            StatusText.Text = _serverManaged ? "Токен удалён с LAN-сервера." : "Локально сохранённый токен удалён.";
         });
     }
 
@@ -62,7 +70,9 @@ public partial class DnsSettingsWindow : Window
     {
         if (!string.IsNullOrEmpty(TokenBox.Password))
         {
-            StatusText.Text = "Сначала сохраните введённый токен. Проверка использует зашифрованный токен из локального хранилища.";
+            StatusText.Text = _serverManaged
+                ? "Сначала сохраните введённый токен. Проверка использует зашифрованный токен LAN-сервера."
+                : "Сначала сохраните введённый токен. Проверка использует зашифрованный токен из локального хранилища.";
             return;
         }
         var zone = ZoneBox.Text.Trim();

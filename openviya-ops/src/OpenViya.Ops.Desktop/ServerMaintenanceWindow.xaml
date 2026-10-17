@@ -19,6 +19,7 @@
             <TextBlock x:Name="SnapshotText" Text="Состояние ещё не проверено. Проверка выполняется только по вашему действию." TextWrapping="Wrap" Foreground="{StaticResource Muted}" Margin="0,6,0,12"/>
             <WrapPanel>
               <Button x:Name="InspectButton" Content="Проверить текущее состояние" Click="Inspect_Click"/>
+              <Button x:Name="RecentJobsButton" Content="Журнал задач сервера" Margin="0" Visibility="Collapsed" Click="RecentJobs_Click"/>
               <TextBlock x:Name="FingerprintText" Text="Fingerprint ещё не прочитан" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="4,0,0,0"/>
             </WrapPanel>
           </StackPanel>

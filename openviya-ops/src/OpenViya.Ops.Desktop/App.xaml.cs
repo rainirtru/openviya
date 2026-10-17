@@ -22,7 +22,8 @@ public partial class App : Application
         Directory.CreateDirectory(dataDir);
         try
         {
-            var window = new MainWindow(dataDir, smokePath is not null);
+            var remoteConfig = smokePath is null ? RemoteConnectionConfig.Load(dataDir) : null;
+            var window = new MainWindow(dataDir, smokePath is not null, remoteConfig: remoteConfig);
             MainWindow = window;
             window.SmokePath = smokePath;
             window.DeleteDataDirectoryOnSmokeClose = ownedSmokeDirectory;

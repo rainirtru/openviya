@@ -5,6 +5,7 @@ using OpenViya.Ops.Ssh;
 using OpenViya.Ops.Storage;
 using OpenViya.Ops.Dns;
 using OpenViya.Ops.Provisioning;
+using OpenViya.Ops.Remote;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -21,6 +22,8 @@ namespace OpenViya.Ops.Desktop;
 public partial class MainWindow : Window
 {
     private readonly AppPaths _paths;
+    private readonly RemoteConnectionConfig? _remoteConfig;
+    private readonly RemoteOpsClient? _remoteClient;
     private readonly IProfileStore _store;
     private readonly SshService _ssh;
     private readonly ITunnelManager _tunnels;
@@ -53,20 +56,26 @@ public partial class MainWindow : Window
     public string? SmokePath { get; set; }
     public string? DeleteDataDirectoryOnSmokeClose { get; set; }
 
-    public MainWindow(string dataDirectory, bool smokeMode = false, IVpsProvisioner? vpsProvisioner = null, IVpsProvisionStore? vpsProvisionStore = null)
+    public MainWindow(string dataDirectory, bool smokeMode = false, IVpsProvisioner? vpsProvisioner = null, IVpsProvisionStore? vpsProvisionStore = null, RemoteConnectionConfig? remoteConfig = null)
     {
         InitializeComponent();
+        StorageModeLabel.Text = remoteConfig is null ? "ЛОКАЛЬНЫЙ РЕЕСТР" : "ОБЩИЙ LAN-СЕРВЕР";
+        StorageModeDescription.Text = remoteConfig is null ? "Данные хранятся на этом устройстве" : $"Общее хранилище · {new Uri(remoteConfig.BaseAddress).Host}";
         SizeChanged += (_, _) => EditorPanel.MaxHeight = Math.Max(240, ActualHeight - 280);
         _paths = new AppPaths(dataDirectory);
-        _store = new SqliteProfileStore(_paths);
+        _remoteConfig = remoteConfig;
+        var remoteClient = remoteConfig?.CreateClient();
+        _remoteClient = remoteClient;
+        var identityMap = new DeviceIdentityMap(dataDirectory);
+        _store = remoteClient is null ? new SqliteProfileStore(_paths) : new RemoteProfileStore(remoteClient, identityMap);
         _ssh = new SshService(_paths);
         _tunnels = new TunnelManager(_ssh);
         _hosts = new HostsService(_paths);
-        _dnsTokens = new DpapiDnsTokenStore(_paths);
-        _dnsRecords = new SqliteDnsRecordStore(_paths);
-        _dnsProvider = new TimewebDnsClient(_dnsTokens);
+        _dnsTokens = remoteClient is null ? new DpapiDnsTokenStore(_paths) : new RemoteDnsTokenStore(remoteClient);
+        _dnsRecords = remoteClient is null ? new SqliteDnsRecordStore(_paths) : new RemoteDnsRecordStore(remoteClient);
+        _dnsProvider = remoteClient is null ? new TimewebDnsClient(_dnsTokens) : new RemoteDnsProviderService(remoteClient);
         _publicDns = new PublicDnsService();
-        _serverStates = new SqliteServerStateStore(_paths);
+        _serverStates = remoteClient is null ? new SqliteServerStateStore(_paths) : new RemoteServerStateStore(remoteClient);
         _panelOpening = new PanelOpeningService(_tunnels, _diagnostics, _hosts, async (profile, ct) =>
         {
             var result = await _publicPanelHttps.CheckAsync(profile, ct);
@@ -82,9 +91,9 @@ public partial class MainWindow : Window
     {
         try
         {
-            StatusText.Text = "Загружаем локальный реестр…";
+            StatusText.Text = _remoteClient is null ? "Загружаем локальный реестр…" : "Загружаем общий реестр с LAN-сервера…";
             await ReloadAsync(_lifetime.Token);
-            StatusText.Text = $"Реестр загружен · {DateTime.Now:HH:mm}";
+            StatusText.Text = $"{(_remoteClient is null ? "Локальный реестр" : "Общий реестр") } загружен · {DateTime.Now:HH:mm}";
             if (SmokePath is not null) await RunSmokeAsync(SmokePath);
         }
         catch (Exception smokeException)
@@ -430,6 +439,12 @@ public partial class MainWindow : Window
         var dialog = new DnsSettingsWindow(_dnsTokens, _dnsProvider) { Owner = this };
         dialog.ShowDialog();
     }
+
+    private void StorageSettings_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new RemoteConnectionWindow(_paths.Root, _remoteConfig) { Owner = this };
+        dialog.ShowDialog();
+    }
     private async void BuildDnsPlan_Click(object sender, RoutedEventArgs e)
     {
         if (_selected is null || _selected.SubdomainMode != SubdomainMode.Automatic || _selected.Role == ServerRole.App) return;
@@ -753,7 +768,9 @@ public partial class MainWindow : Window
             var chosen = TrustKeyDialog.Choose(this, profile, keys);
             if (chosen is null) { StatusText.Text = "Trust не изменён: ключ не принят."; return; }
             if (!Confirm("Подтвердить SSH host key?", $"Сравните fingerprint {chosen.Fingerprint} с доверенным источником, например консолью провайдера или заранее подтверждённым отпечатком. Сканирование само по себе не подтверждает личность сервера. Принять этот ключ для профиля «{profile.Name}»?", "Принять fingerprint")) return;
-            await _ssh.TrustHostKeyAsync(profile, chosen, ct); StatusText.Text = $"Fingerprint {chosen.Fingerprint} принят для этого профиля.";
+            await _ssh.TrustHostKeyAsync(profile, chosen, ct);
+            if (_remoteClient is not null) _ = await _remoteClient.PutAsync<HostKeyCandidate>($"api/servers/{profile.Id:D}/host-key", chosen, ct);
+            StatusText.Text = $"Fingerprint {chosen.Fingerprint} принят для этого профиля{(_remoteClient is null ? " на этом устройстве" : " и передан в LAN-хранилище")}.";
         });
     }
     private async void CheckSsh_Click(object sender, RoutedEventArgs e)
@@ -902,6 +919,7 @@ public partial class MainWindow : Window
         if (_tunnels is not null) await _tunnels.DisposeAsync();
         if (_dnsProvider is IDisposable disposableDns) disposableDns.Dispose();
         if (_publicDns is IDisposable disposablePublicDns) disposablePublicDns.Dispose();
+        _remoteClient?.Dispose();
         Close();
     }
 

@@ -1,5 +1,6 @@
 using Microsoft.Win32;
 using OpenViya.Ops.Core;
+using OpenViya.Ops.Remote;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
@@ -16,6 +17,8 @@ public partial class ServerMaintenanceWindow : Window
     private readonly CancellationTokenSource _lifetime = new();
     private CancellationTokenSource? _operationCancellation;
     private readonly bool _previewMode;
+    private readonly bool _serverManagedAccess;
+    private readonly RemoteVpsMaintenanceService? _remoteMaintenance;
     private bool _initializing = true;
     private bool _closeWhenIdle;
     private bool _draftTouched;
@@ -28,11 +31,14 @@ public partial class ServerMaintenanceWindow : Window
         Func<Guid, bool>? hasActiveTunnel = null,
         Func<Guid, Task>? stopTunnel = null,
         Func<Guid, Task>? profileUpdated = null,
-        bool smokeMode = false)
+        bool smokeMode = false,
+        bool serverManagedAccess = false)
     {
         InitializeComponent();
         _profile = profile ?? throw new ArgumentNullException(nameof(profile));
         _previewMode = smokeMode;
+        _serverManagedAccess = serverManagedAccess;
+        _remoteMaintenance = service as RemoteVpsMaintenanceService;
         _hasActiveTunnel = hasActiveTunnel ?? (_ => false);
         _stopTunnel = stopTunnel ?? (_ => Task.CompletedTask);
         _viewModel = new ServerMaintenanceViewModel(profile, service, profileStore, stateStore, profileUpdated);
@@ -40,7 +46,12 @@ public partial class ServerMaintenanceWindow : Window
         _viewModel.PropertyChanged += ViewModelChanged;
         TitleText.Text = $"Обслуживание · {profile.Name}";
         EndpointText.Text = $"{profile.Host}:{profile.SshPort} · {profile.UserName} · {profile.PanelDomain}";
-        if (string.IsNullOrWhiteSpace(profile.IdentityFile))
+        if (string.IsNullOrWhiteSpace(profile.IdentityFile) && serverManagedAccess)
+        {
+            AuthLabel.Content = "Passphrase серверного ключа (если задан)";
+            AuthHintText.Text = "Используется закрытый ключ из зашифрованного хранилища LAN-сервера. Passphrase нужен только если ключ защищён.";
+        }
+        else if (string.IsNullOrWhiteSpace(profile.IdentityFile))
         {
             AuthLabel.Content = "Пароль SSH";
             AuthHintText.Text = $"Подключение выполняется от имени {profile.UserName}. Введите административный SSH-пароль для выбранного действия.";
@@ -50,6 +61,7 @@ public partial class ServerMaintenanceWindow : Window
             AuthLabel.Content = "Passphrase ключа (если задан)";
             AuthHintText.Text = $"Используется ключ профиля {Path.GetFileName(profile.IdentityFile)} от имени {profile.UserName}. Для ключа без passphrase оставьте поле пустым.";
         }
+        if (_remoteMaintenance is not null) RecentJobsButton.Visibility = Visibility.Visible;
         PanelPortBox.Text = profile.PanelPort.ToString(System.Globalization.CultureInfo.InvariantCulture);
         OpeningModeBox.SelectedIndex = profile.PanelOpenMode == PanelOpenMode.PublicHttps ? 1 : 0;
         AllowedIpsBox.Text = profile.PanelAllowedIpsText;
@@ -81,6 +93,48 @@ public partial class ServerMaintenanceWindow : Window
         await WithAccessAsync((access, token) => _viewModel.InspectAsync(access, token));
         if (!_draftTouched && _viewModel.Snapshot is not null) SyncDraftToControls();
     }
+
+    private async void RecentJobs_Click(object sender, RoutedEventArgs e)
+    {
+        if (_remoteMaintenance is null) return;
+        RecentJobsButton.IsEnabled = false;
+        StatusText.Text = "Загружаем журнал задач с LAN-сервера…";
+        try
+        {
+            var jobs = await _remoteMaintenance.LoadRecentJobsAsync(_profile.Id, _lifetime.Token);
+            var body = jobs.Count == 0
+                ? "Для этого профиля ещё нет серверных задач."
+                : string.Join(Environment.NewLine + Environment.NewLine, jobs.Select(job =>
+                    $"{ActionLabel(job.Action)} · {StateLabel(job.State)} · {job.UpdatedAt.ToLocalTime():g}"));
+            OwnedDialog.Show(this, "Журнал серверных задач", body + Environment.NewLine + Environment.NewLine +
+                "Это только просмотр. Задача продолжает выполняться на LAN-сервере, даже если закрыть это окно или приложение.");
+            StatusText.Text = "Журнал серверных задач обновлён.";
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested) { }
+        catch
+        {
+            StatusText.Text = "Не удалось загрузить журнал. Проверьте подключение к LAN-серверу и повторите.";
+        }
+        finally { RecentJobsButton.IsEnabled = !_lifetime.IsCancellationRequested; }
+    }
+
+    private static string ActionLabel(string action) => action switch
+    {
+        "apply-access" => "Изменение доступа панели",
+        "renew-certificate" => "Продление сертификата",
+        "create-backup" => "Создание резервной копии",
+        _ => "Обслуживание сервера"
+    };
+
+    private static string StateLabel(string state) => state switch
+    {
+        "queued" => "В очереди",
+        "running" => "Выполняется",
+        "complete" => "Завершена",
+        "failed" => "Ошибка",
+        "needs-attention" => "Требует внимания",
+        _ => "Статус уточняется"
+    };
 
     private async void Plan_Click(object sender, RoutedEventArgs e)
     {
@@ -171,7 +225,7 @@ public partial class ServerMaintenanceWindow : Window
     {
         if (_viewModel.IsBusy || _lifetime.IsCancellationRequested) return;
         var secret = AuthSecretBox.Password;
-        if (string.IsNullOrEmpty(_profile.IdentityFile) && string.IsNullOrEmpty(secret))
+        if (string.IsNullOrEmpty(_profile.IdentityFile) && !_serverManagedAccess && string.IsNullOrEmpty(secret))
         {
             StatusText.Text = "Введите административный SSH-пароль для выбранного действия.";
             AuthSecretBox.Focus();
@@ -179,7 +233,7 @@ public partial class ServerMaintenanceWindow : Window
         }
 
         var access = string.IsNullOrWhiteSpace(_profile.IdentityFile)
-            ? new VpsSshAccess { UserName = _profile.UserName, Method = VpsAuthMethod.Password, Password = secret }
+            ? new VpsSshAccess { UserName = _profile.UserName, Method = _serverManagedAccess ? VpsAuthMethod.PrivateKey : VpsAuthMethod.Password, Password = _serverManagedAccess ? "" : secret, KeyPassphrase = _serverManagedAccess ? secret : "" }
             : new VpsSshAccess { UserName = _profile.UserName, Method = VpsAuthMethod.PrivateKey, IdentityFile = _profile.IdentityFile, KeyPassphrase = secret };
         AuthSecretBox.Clear();
         using var operation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
@@ -267,6 +321,7 @@ public partial class ServerMaintenanceWindow : Window
     {
         var enabled = !_previewMode && !_viewModel.IsBusy && !_lifetime.IsCancellationRequested;
         InspectButton.IsEnabled = PlanButton.IsEnabled = CheckCertificateButton.IsEnabled = RenewCertificateButton.IsEnabled = BackupButton.IsEnabled = UpdatesButton.IsEnabled = enabled;
+        if (_remoteMaintenance is not null) RecentJobsButton.IsEnabled = enabled;
         PanelPortBox.IsEnabled = OpeningModeBox.IsEnabled = AllowedIpsBox.IsEnabled = enabled;
         AuthSecretBox.IsEnabled = enabled;
         CancelOperationButton.Visibility = _viewModel.IsBusy ? Visibility.Visible : Visibility.Collapsed;
