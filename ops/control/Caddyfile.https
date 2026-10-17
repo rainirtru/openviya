@@ -1,0 +1,54 @@
+{
+    admin off
+}
+openviya.online, www.openviya.online {
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.openviya.online; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' https://api.openviya.online"
+        -Server
+    }
+    @www host www.openviya.online
+    redir @www https://openviya.online{uri} permanent
+    @cabinet path /account /account/*
+    redir @cabinet https://api.openviya.online{uri} permanent
+    @api path /api /api/*
+    respond @api 404
+    root * /srv/web/current/public
+    try_files {path} /index.html
+    file_server
+}
+
+api.openviya.online {
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.openviya.online; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' https://api.openviya.online"
+        -Server
+    }
+    @private path /api/v1/admin* /api/v1/staff* /api/v1/internal* /actuator/info
+    respond @private 404
+
+    @cabinet path /account
+    redir @cabinet /account/ permanent
+
+    handle /account/* {
+        header {
+            Cache-Control no-store
+            X-Robots-Tag "noindex, nofollow"
+        }
+        root * /srv/web/current/public
+        try_files {path} /account/index.html
+        file_server
+    }
+
+    @shared-assets path /assets/*
+    handle @shared-assets {
+        root * /srv/web/current/public
+        file_server
+    }
+
+    reverse_proxy app:8080 {
+        header_up -Forwarded
+    }
+}

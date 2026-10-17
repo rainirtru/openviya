@@ -1,0 +1,6 @@
+app.jar
+app.jar.sha256
+panel-ca.*
+.env
+private/
+.artifacts/
