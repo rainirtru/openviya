@@ -113,6 +113,37 @@ class ApplicationPostgresSmokeTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void telegramUserSessionPersistsWithUuidPrincipalNameAndRoundTrips() {
+        UUID userId = UUID.randomUUID();
+        var principal = new com.openviya.backend.identity.UserPrincipal(userId, "712345678",
+                "test_user", "Long display name ".repeat(12));
+        assertTrue(principal.toString().length() > 100);
+        var authentication = org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+                .authenticated(principal, null, java.util.List.of(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")));
+        var context = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        var repository = (org.springframework.session.SessionRepository<org.springframework.session.Session>)
+                (org.springframework.session.SessionRepository<?>) applicationContext.getBean(
+                        org.springframework.session.jdbc.JdbcIndexedSessionRepository.class);
+        var session = repository.createSession();
+        session.setAttribute("SPRING_SECURITY_CONTEXT", context);
+        try {
+            repository.save(session);
+            assertEquals(userId.toString(), jdbc.queryForObject(
+                    "SELECT principal_name FROM spring_session WHERE session_id = ?", String.class, session.getId()));
+            var restored = repository.findById(session.getId());
+            org.springframework.security.core.context.SecurityContext restoredContext =
+                    restored.getAttribute("SPRING_SECURITY_CONTEXT");
+            assertEquals(principal, restoredContext.getAuthentication().getPrincipal());
+            assertEquals(userId.toString(), restoredContext.getAuthentication().getName());
+        } finally {
+            repository.deleteById(session.getId());
+        }
+    }
+
+    @Test
     void auditStoresSafeChangesAndRejectsNestedSecretKeys() {
         UUID actorId = UUID.randomUUID();
         UUID eventId = auditEvents.append(new AuditActor(AuditActor.Kind.STAFF, actorId),

@@ -21,9 +21,13 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class TelegramOidcSuccessHandler implements AuthenticationSuccessHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(TelegramOidcSuccessHandler.class);
 
     private final UserIdentityRepository identities;
     private final AuditEventRepository auditEvents;
@@ -51,9 +55,11 @@ public class TelegramOidcSuccessHandler implements AuthenticationSuccessHandler 
             return;
         }
 
+        String stage = "profile_id";
         try {
             var claims = oidcUser.getIdToken().getClaims();
             String telegramId = TelegramProfile.numericUserIdFromOidcClaim(claims.get("id"));
+            stage = "profile_fields";
             String username = stringClaim(claims.get("preferred_username"));
             String displayName = stringClaim(claims.get("name"));
             if (displayName == null) {
@@ -65,19 +71,23 @@ public class TelegramOidcSuccessHandler implements AuthenticationSuccessHandler 
                 }
             }
 
+            stage = "profile_validation";
             TelegramProfile profile = new TelegramProfile(telegramId, username, displayName);
+            stage = "identity";
             ExternalIdentity identity = identities.resolveTelegramIdentity(profile, Instant.now());
             UserPrincipal principal = new UserPrincipal(
                     identity.userId(), identity.providerSubject(), identity.username(), identity.displayName());
             var authorities = Set.of(new SimpleGrantedAuthority("ROLE_USER"));
             var userAuthentication = UsernamePasswordAuthenticationToken.authenticated(principal, null, authorities);
 
+            stage = "session";
             request.getSession(true);
             request.changeSessionId();
             SecurityContext context = SecurityContextHolder.createEmptyContext();
             context.setAuthentication(userAuthentication);
             SecurityContextHolder.setContext(context);
             contextRepository.saveContext(context, request, response);
+            stage = "audit";
             auditEvents.append(new AuditActor(AuditActor.Kind.USER, identity.userId()),
                     "user.telegram.login", "USER", identity.userId().toString(), null, null, null,
                     correlationId(request));
@@ -85,6 +95,11 @@ public class TelegramOidcSuccessHandler implements AuthenticationSuccessHandler 
             response.setStatus(HttpServletResponse.SC_SEE_OTHER);
             response.setHeader("Location", publicBaseUrl);
         } catch (UserIdentityException | IllegalArgumentException exception) {
+            Object idClaim = oidcUser.getIdToken().getClaims().get("id");
+            String idType = idClaim == null ? "missing" : idClaim instanceof Number ? "number"
+                    : idClaim instanceof String ? "string" : "other";
+            log.warn("Telegram login mapping rejected: stage={}, id_type={}, failure={}",
+                    stage, idType, exception instanceof UserIdentityException ? "account_unavailable" : "invalid_profile_or_session");
             SecurityContextHolder.clearContext();
             HttpSession session = request.getSession(false);
             if (session != null) {
