@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>SshChecks</AssemblyName>
+    <RootNamespace>SshChecks</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OpenViya.Ops.Ssh\OpenViya.Ops.Ssh.csproj" />
+  </ItemGroup>
+</Project>

@@ -24,3 +24,8 @@ volumes/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Temporary previews and Python bytecode
+.tmp/
+__pycache__/
+*.py[cod]

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>OpenViya.Ops.Provisioning</AssemblyName>
+    <RootNamespace>OpenViya.Ops.Provisioning</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OpenViya.Ops.Core\OpenViya.Ops.Core.csproj" />
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
+    <EmbeddedResource Include="..\..\..\ops\vps\bootstrap-vps.sh" LogicalName="OpenViya.Ops.Provisioning.bootstrap-vps.sh" />
+    <EmbeddedResource Include="..\..\..\ops\vps\maintenance-helper.py" LogicalName="OpenViya.Ops.Provisioning.maintenance-helper.py" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/OpenViya.Ops.Core/OpenViya.Ops.Core.csproj" />
+    <Compile Include="../../src/OpenViya.Ops.Desktop/VpsConnectionPreflightService.cs" Link="VpsConnectionPreflightService.cs" />
+    <Compile Include="../../src/OpenViya.Ops.Desktop/VpsProvisionWizardViewModel.cs" Link="VpsProvisionWizardViewModel.cs" />
+    <Compile Include="../../src/OpenViya.Ops.Desktop/VpsProgressViewModel.cs" Link="VpsProgressViewModel.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,26 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["src/OpenViya.Ops.Desktop"],
+  "locale": "ru-RU",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Table Selection", "Select/Listbox", "Form", "Scrollbar", "Toast", "CRUD"],
+  "ownership": {
+    "Table Selection": "native",
+    "Select/Listbox": "native",
+    "Form": "native",
+    "Scrollbar": "native",
+    "Toast": "typed",
+    "CRUD": "native"
+  },
+  "requiredCommands": ["build", "smoke"],
+  "commands": {
+    "build": "dotnet build src/OpenViya.Ops.Desktop/OpenViya.Ops.Desktop.csproj",
+    "smoke": "powershell -NoProfile -ExecutionPolicy Bypass -File tests/DesktopChecks/run-smoke.ps1"
+  },
+  "evidence": {
+    "crudFullFlow": "tests/DesktopChecks/run-smoke.ps1",
+    "failurePaths": "UX-CONTRACT.md"
+  },
+  "platform": "native-wpf",
+  "auditNotes": "WPF has native keyboard/focus semantics and system-owned scrollbars. Browser HTML, CSS, ARIA, and browser dialog rules do not apply literally; Windows UI Automation is the required runtime check."
+}

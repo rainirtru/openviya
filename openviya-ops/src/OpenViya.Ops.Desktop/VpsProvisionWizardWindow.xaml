@@ -1,0 +1,178 @@
+<Window x:Class="OpenViya.Ops.Desktop.VpsProvisionWizardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:OpenViya.Ops.Desktop"
+        Title="OpenViya Ops · Настройка VPS" Width="1040" Height="860" MinWidth="900" MinHeight="680"
+        WindowStartupLocation="CenterOwner" Background="{StaticResource Canvas}" Foreground="{StaticResource Ink}" Closing="Window_Closing">
+  <Grid Margin="24,20,24,16">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel Grid.Row="0" Margin="0,0,0,12">
+      <TextBlock Text="НАСТРОЙКА СВЕЖЕГО VPS" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Blue}"/>
+      <TextBlock x:Name="TitleText" Text="Подготовить сервер и установить 3x-ui" FontSize="23" FontWeight="SemiBold" Margin="0,3,0,3"/>
+      <Grid Margin="0,10,0,0">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Border x:Name="StepMark0" Grid.Column="0" BorderThickness="0,0,0,3" BorderBrush="{StaticResource Teal}" Padding="0,0,0,7"><TextBlock Text="1 · Подключение" FontWeight="SemiBold"/></Border>
+        <Border x:Name="StepMark1" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="{StaticResource Line}" Padding="0,0,0,7"><TextBlock Text="2 · Параметры сервера" Foreground="{StaticResource Muted}"/></Border>
+        <Border x:Name="StepMark2" Grid.Column="2" BorderThickness="0,0,0,1" BorderBrush="{StaticResource Line}" Padding="0,0,0,7"><TextBlock Text="3 · Доступ к панели" Foreground="{StaticResource Muted}"/></Border>
+        <Border x:Name="StepMark3" Grid.Column="3" BorderThickness="0,0,0,1" BorderBrush="{StaticResource Line}" Padding="0,0,0,7"><TextBlock Text="4 · Проверка и установка" Foreground="{StaticResource Muted}"/></Border>
+      </Grid>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel x:Name="WizardForm">
+        <StackPanel x:Name="ConnectionStep">
+          <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="АДРЕС СЕРВЕРА" Foreground="{StaticResource Teal}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,10"/>
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,12,8"><Label Content="Публичный IP VPS"/><TextBox x:Name="IpBox" FontFamily="Cascadia Mono, Consolas" ToolTip="Введите публичный IPv4 или IPv6 адрес" TextChanged="EndpointChanged"/></StackPanel>
+                <StackPanel Grid.Column="1" Margin="0,0,12,8"><Label Content="SSH-порт"/><TextBox x:Name="SshPortBox" Text="22" TextChanged="EndpointChanged"/></StackPanel>
+                <StackPanel Grid.Column="2" Margin="0,0,0,8"><Label Content="Начальный пользователь"/><TextBox x:Name="InitialUserBox" Text="root" TextChanged="AccessChanged"/></StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+          <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="СПОСОБ ВХОДА" Foreground="{StaticResource Teal}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,12,8"><Label Content="Аутентификация"/><ComboBox x:Name="AuthMethodBox" SelectionChanged="AuthMethodChanged"><ComboBoxItem Content="Пароль" Tag="Password"/><ComboBoxItem Content="Приватный ключ" Tag="PrivateKey"/></ComboBox></StackPanel>
+                <StackPanel Grid.Column="1" Margin="0,0,12,8"><Label Content="Пароль / passphrase"/><PasswordBox x:Name="InitialSecretBox" MinHeight="38" Padding="10,8" PasswordChanged="WizardPasswordChanged"/></StackPanel>
+                <StackPanel Grid.Column="2" Margin="0,0,0,8"><Label Content="Файл начального ключа"/><DockPanel><Button DockPanel.Dock="Right" x:Name="InitialKeyBrowseButton" Content="Обзор…" Margin="6,0,0,0" Click="BrowseInitialKey_Click"/><TextBox x:Name="InitialKeyPathBox" TextChanged="AccessChanged" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/></DockPanel></StackPanel>
+              </Grid>
+              <TextBlock Text="Секрет используется только в памяти. Он не попадает в профиль или журнал. После проверки поля секрета будут очищены перед запуском установки." Foreground="{StaticResource Muted}" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
+          <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="ДОВЕРИЕ И ПРОВЕРКА" Foreground="{StaticResource Teal}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
+              <WrapPanel><Button Content="Сверить fingerprint…" Click="ScanHostKey_Click"/><TextBlock x:Name="HostKeySummary" Text="Fingerprint не проверен." Foreground="{StaticResource Muted}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="620"/></WrapPanel>
+              <TextBlock Text="Сканирование не подтверждает личность сервера. Сравните ssh-ed25519 fingerprint с независимой консолью VPS-провайдера." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,8"/>
+              <WrapPanel><Button x:Name="CheckConnectionButton" Content="Проверить подключение" Click="CheckConnection_Click" Background="#26475C" BorderBrush="#477897"/><TextBlock x:Name="ConnectionCheckText" Text="Подключение ещё не проверено." Foreground="{StaticResource Muted}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="640"/></WrapPanel>
+              <TextBlock Text="Проверка открывает только SSH/SFTP-сессию, читает id -u, uname и /etc/os-release. Она не запускает установку, не меняет сервер и не доказывает работу VPN или firewall." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <StackPanel x:Name="ServerStep" Visibility="Collapsed">
+          <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="ПАРАМЕТРЫ СЕРВЕРА И DNS" Foreground="{StaticResource Teal}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,10"/>
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,12,8"><Label Content="Имя узла"/><TextBox x:Name="NameBox" TextChanged="NameBox_TextChanged"/></StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,12,8"><Label Content="Роль"/><ComboBox x:Name="RoleBox" SelectionChanged="SettingsChanged"><ComboBoxItem Content="VPN-нода" Tag="VpnNode"/><ComboBoxItem Content="Control" Tag="Control"/></ComboBox></StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,8"><Label Content="Пользователь администратора"/><TextBox x:Name="AdminUserBox" Text="vpsadmin"/></StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,12,8"><Label Content="Регион"/><TextBox x:Name="RegionBox" Text="usa"/></StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,12,8"><Label Content="Индекс узла"/><TextBox x:Name="IndexBox" Text="1"/></StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,8"><Label Content="Режим DNS"/><ComboBox x:Name="DnsModeBox" SelectionChanged="DnsModeChanged"><ComboBoxItem Content="Автоматически · Timeweb API" Tag="Automatic"/><ComboBoxItem Content="Вручную · сайт провайдера" Tag="Manual"/></ComboBox></StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,12,8"><Label Content="DNS-зона"/><TextBox x:Name="ZoneBox" Text="openviya.online"/></StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,12,8"><Label Content="DNS-адрес · пусто = IP VPS"/><TextBox x:Name="DnsAddressBox"/></StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,8"><Label Content="Домен панели"/><TextBox x:Name="PanelDomainBox"/></StackPanel>
+                <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,12,0"><Label Content="VPN-домен"/><TextBox x:Name="VpnDomainBox"/></StackPanel>
+                <StackPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"><Label Content="Будущий SSH-ключ администратора"/><ComboBox x:Name="AdminKeyModeBox" Width="280" SelectionChanged="AdminKeyModeChanged"><ComboBoxItem Content="Создать защищённый ключ" Tag="Generate"/><ComboBoxItem Content="Выбрать существующий Ed25519" Tag="Existing"/></ComboBox><Grid x:Name="AdminKeyPicker" Margin="0,6,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="AdminKeyPathBox"/><Button Grid.Column="1" Content="Обзор…" Click="BrowseAdminKey_Click"/></Grid><PasswordBox x:Name="AdminKeyPassphraseBox" MinHeight="38" Padding="10,8" Margin="0,6,0,0" ToolTip="Passphrase существующего административного ключа"/></StackPanel>
+              </Grid>
+              <TextBlock x:Name="DnsHint" Text="Автоматический режим создаёт DNS-записи только после финального запуска. Ручной режим оставляет все DNS-действия на сайте провайдера." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+              <TextBlock Text="Начальный root-доступ и пароль административного ключа остаются только в памяти. Выбранный путь будущего ключа будет сохранён в локальном профиле." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <StackPanel x:Name="PanelStep" Visibility="Collapsed">
+          <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="ДОСТУП К ПАНЕЛИ" Foreground="{StaticResource Teal}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,10"/>
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,12,8"><Label Content="Порт панели"/><TextBox x:Name="PanelPortBox" Text="38471"/></StackPanel>
+                <StackPanel Grid.Column="1" Margin="0,0,12,8"><Label Content="Доступ к панели с VPS"/><ComboBox x:Name="PanelAccessBox" SelectionChanged="PanelAccessChanged"><ComboBoxItem Content="Только SSH-туннель" Tag="Tunnel"/><ComboBoxItem Content="Туннель и публичный доступ" Tag="Both"/></ComboBox></StackPanel>
+                <StackPanel Grid.Column="2"><Label Content="Открытие панели в приложении"/><ComboBox x:Name="PanelOpenModeBox" SelectionChanged="SettingsChanged"><ComboBoxItem Content="Через SSH-туннель" Tag="Tunnel"/><ComboBoxItem Content="Публичный HTTPS" Tag="PublicHttps"/></ComboBox></StackPanel>
+              </Grid>
+              <StackPanel Margin="0,4,0,8"><Label Content="Email для Let’s Encrypt"/><TextBox x:Name="AcmeEmailBox" MaxWidth="500" HorizontalAlignment="Left"/></StackPanel>
+              <StackPanel x:Name="AllowedIpsPanel">
+                <Label Content="Разрешённые IP для публичного доступа · необязательно" Target="{Binding ElementName=PanelCidrBox}"/>
+                <TextBox x:Name="PanelCidrBox" AcceptsReturn="True" AcceptsTab="False" Height="90" MaxLength="16000" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="Разрешённые IP для публичного доступа к панели" AutomationProperties.HelpText="По одному IPv4 или IPv6 на строку, без запятых и CIDR. Пусто — публичный доступ без ограничения IP."/>
+                <TextBlock Text="По одному IPv4 или IPv6 на строку, без запятых и CIDR; до 100 адресов. Пусто означает публичный доступ без IP-ограничения." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                <TextBlock x:Name="PanelAllowedIpsError" Foreground="{StaticResource Danger}" TextWrapping="Wrap" Margin="0,4,0,0" AutomationProperties.LiveSetting="Polite"/>
+              </StackPanel>
+              <TextBlock Text="Публичный режим требует корректной DNS A/AAAA-записи, открытого TCP 80 для выпуска и продления сертификата, а также правил firewall провайдера. Пустой список IP оставляет панель доступной из интернета." Foreground="{StaticResource Brass}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <StackPanel x:Name="ReviewStep" Visibility="Collapsed">
+          <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="ПРОВЕРЬТЕ ПАРАМЕТРЫ" Foreground="{StaticResource Teal}" FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock x:Name="ReviewSummary" FontFamily="Cascadia Mono, Consolas" TextWrapping="Wrap" Margin="0,10,0,0"/>
+            </StackPanel>
+          </Border>
+          <Border Background="#1A252D" BorderBrush="{StaticResource Brass}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="ПОДТВЕРЖДЕНИЯ ПЕРЕД ЗАПУСКОМ" Foreground="{StaticResource Brass}" FontSize="11" FontWeight="SemiBold"/>
+              <CheckBox x:Name="FreshConfirmBox" Margin="0,8,0,5" Click="ConfirmationChanged"><TextBlock Foreground="{StaticResource Ink}" Text="Подтверждаю, что VPS новый и на нём нет панели, Docker, настроенного firewall/SSH или важных данных." TextWrapping="Wrap"/></CheckBox>
+              <CheckBox x:Name="FirewallConfirmBox" Margin="0,2,0,5" Click="ConfirmationChanged"><TextBlock Foreground="{StaticResource Ink}" Text="Во внешнем firewall разрешён входящий TCP 80, SSH и необходимые порты; мастер не изменяет firewall провайдера." TextWrapping="Wrap"/></CheckBox>
+              <CheckBox x:Name="LetsEncryptConfirmBox" Margin="0,2,0,5" Click="ConfirmationChanged"><TextBlock Foreground="{StaticResource Ink}" Text="Принимаю условия Let’s Encrypt от своего имени для выпуска TLS-сертификата." TextWrapping="Wrap"/></CheckBox>
+              <TextBlock Text="Фактическая проверка свежести будет повторена на VPS перед любыми изменениями. Подтверждение запускает удалённую подготовку и установку; отмена локального наблюдения не всегда останавливает уже начатую удалённую задачу." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+    <Border Grid.Row="2" Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="12,8" Margin="0,10,0,0">
+      <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="160"/></Grid.ColumnDefinitions>
+        <TextBlock x:Name="StageText" Text="Сверьте fingerprint и проверьте SSH/SFTP до продолжения." TextWrapping="Wrap" FontWeight="SemiBold"/>
+        <ProgressBar x:Name="RunProgress" Grid.Column="1" Height="5" IsIndeterminate="False" VerticalAlignment="Center"/>
+        <ScrollViewer Grid.Row="1" Grid.ColumnSpan="2" MaxHeight="72" VerticalScrollBarVisibility="Auto" Margin="0,4,0,0"><TextBlock x:Name="RunMessageText" Text="Установка начнётся только на последнем шаге после подтверждения." Foreground="{StaticResource Muted}" TextWrapping="Wrap"/></ScrollViewer>
+        <StackPanel x:Name="ProgressSummaryPanel" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,8,0,0" Visibility="Collapsed">
+          <TextBlock Text="{Binding StateText}" FontWeight="SemiBold" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+          <WrapPanel Margin="0,3,0,5">
+            <TextBlock Text="Текущий шаг: " Foreground="{StaticResource Muted}"/><TextBlock Text="{Binding CurrentOperation}"/>
+            <TextBlock Text="   ·   прошло " Foreground="{StaticResource Muted}"/><TextBlock Text="{Binding CurrentElapsed}" FontFamily="Cascadia Mono, Consolas"/>
+          </WrapPanel>
+          <TextBlock Text="{Binding LastContact}" Foreground="{StaticResource Muted}" TextWrapping="Wrap"/>
+          <TextBlock Text="{Binding NextPoll}" Foreground="{StaticResource Muted}" Margin="0,2,0,0"/>
+          <ItemsControl ItemsSource="{Binding Stages}" Margin="0,6,0,0">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate><DataTemplate>
+              <Border BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="7,3" Margin="0,0,6,5" Background="{StaticResource Raised}">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="{Binding Title}" FontSize="11"/>
+                  <TextBlock Text="  ·  " Foreground="{StaticResource Muted}" FontSize="11"/>
+                  <TextBlock Text="{Binding StateText}" FontSize="11" Foreground="{StaticResource Muted}"/>
+                </StackPanel>
+              </Border>
+            </DataTemplate></ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <StackPanel x:Name="ProgressDnsPanel" Visibility="Collapsed" Margin="0,1,0,0">
+            <TextBlock Text="DNS · проверка имён" Foreground="{StaticResource Teal}" FontSize="11" FontWeight="SemiBold"/>
+            <ItemsControl ItemsSource="{Binding DnsItems}">
+              <ItemsControl.ItemTemplate><DataTemplate>
+                <Grid Margin="0,2,0,0">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <TextBlock TextWrapping="Wrap"><Run Text="{Binding Name}"/><Run Text="  ·  "/><Run Text="{Binding RecordType}"/><Run Text=" → "/><Run Text="{Binding ExpectedAddress}"/></TextBlock>
+                  <TextBlock Grid.Column="1" Text="{Binding StateText}" Foreground="{StaticResource Brass}" Margin="12,0,0,0"/>
+                </Grid>
+              </DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="{Binding DnsSummary}" Foreground="{StaticResource Muted}" Margin="0,3,0,0"/>
+          </StackPanel>
+        </StackPanel>
+        <Expander x:Name="ProgressDetails" Grid.Row="3" Grid.ColumnSpan="2" Header="Журнал настройки" Foreground="{StaticResource Ink}" Margin="0,8,0,0"><local:ProvisionProgressLog x:Name="ProgressJournal" Height="144" Margin="0,6,0,0"/></Expander>
+      </Grid>
+    </Border>
+    <Grid Grid.Row="3" Margin="0,10,0,0">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <TextBlock x:Name="FormError" Grid.Column="0" Foreground="{StaticResource Danger}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0"/>
+      <StackPanel Grid.Column="1" Orientation="Horizontal">
+        <Button x:Name="StopObservingButton" Content="Прекратить наблюдение" Click="StopObserving_Click"/>
+        <Button x:Name="PreviousStepButton" Content="Назад" Click="PreviousStep_Click" IsEnabled="False"/>
+        <Button x:Name="NextStepButton" Content="Далее" Click="NextStep_Click" Background="#26475C" BorderBrush="#477897"/>
+        <Button x:Name="RunButton" Content="Запустить установку" Width="210" IsEnabled="False" Background="#26475C" BorderBrush="#477897" Margin="0" Visibility="Collapsed" Click="Run_Click"/>
+      </StackPanel>
+    </Grid>
+  </Grid>
+</Window>
