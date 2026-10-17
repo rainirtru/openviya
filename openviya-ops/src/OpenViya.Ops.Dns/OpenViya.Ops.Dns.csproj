@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>OpenViya.Ops.Dns</AssemblyName></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../OpenViya.Ops.Core/OpenViya.Ops.Core.csproj" /></ItemGroup>
+</Project>

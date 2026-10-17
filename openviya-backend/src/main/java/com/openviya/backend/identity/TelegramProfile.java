@@ -14,17 +14,23 @@ public record TelegramProfile(
         if (!isValidTelegramUserId(telegramUserId)) {
             throw new IllegalArgumentException("Telegram user id must be a positive integer with at most 52 bits");
         }
-        if (username != null && username.length() > 255) {
+        if (username != null && username.codePointCount(0, username.length()) > 255) {
             throw new IllegalArgumentException("Telegram username is too long");
         }
-        if (displayName != null && displayName.length() > 255) {
+        if (displayName != null && displayName.codePointCount(0, displayName.length()) > 255) {
             throw new IllegalArgumentException("Telegram display name is too long");
         }
     }
 
     public static String numericUserIdFromOidcClaim(Object claim) {
+        if (claim instanceof String string) {
+            if (!isValidTelegramUserId(string)) {
+                throw new IllegalArgumentException("Telegram OIDC profile.id must be a canonical positive integer within 52 bits");
+            }
+            return string;
+        }
         if (!(claim instanceof Number number)) {
-            throw new IllegalArgumentException("Telegram OIDC profile.id must be a JSON number");
+            throw new IllegalArgumentException("Telegram OIDC profile.id must be a number or canonical decimal string");
         }
         try {
             BigInteger id = new BigDecimal(number.toString()).toBigIntegerExact();

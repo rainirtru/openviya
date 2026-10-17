@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>OpenViya.Ops.NetworkChecks</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/OpenViya.Ops.Core/Contracts.cs" Link="Contracts.cs" />
+    <Compile Include="../../src/OpenViya.Ops.Core/ProfileValidation.cs" Link="ProfileValidation.cs" />
+    <Compile Include="../../src/OpenViya.Ops.Core/PanelAllowedIps.cs" Link="PanelAllowedIps.cs" />
+    <Compile Include="../../src/OpenViya.Ops.HostsHelper/HostsFileEditor.cs" Link="HostsFileEditor.cs" />
+    <Compile Include="../../src/OpenViya.Ops.Network/DiagnosticsService.cs" Link="DiagnosticsService.cs" />
+  </ItemGroup>
+</Project>

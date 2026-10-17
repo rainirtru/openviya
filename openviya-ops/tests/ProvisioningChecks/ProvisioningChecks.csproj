@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>ProvisioningChecks</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OpenViya.Ops.Core\OpenViya.Ops.Core.csproj" />
+    <ProjectReference Include="..\..\src\OpenViya.Ops.Provisioning\OpenViya.Ops.Provisioning.csproj" />
+  </ItemGroup>
+</Project>

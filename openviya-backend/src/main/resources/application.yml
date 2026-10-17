@@ -15,19 +15,19 @@ spring:
     timeout: ${OPENVIYA_SESSION_TIMEOUT:30m}
     jdbc:
       initialize-schema: never
-  servlet:
-    session:
-      cookie:
-        name: OPENVIYA_SESSION
-        path: /api/v1
-        http-only: true
-        secure: ${OPENVIYA_SESSION_COOKIE_SECURE:true}
-        same-site: lax
   lifecycle:
     timeout-per-shutdown-phase: 20s
 
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      cookie:
+        name: SESSION
+        path: /
+        http-only: true
+        secure: ${OPENVIYA_SESSION_COOKIE_SECURE:true}
+        same-site: lax
   shutdown: graceful
 
 management:
@@ -70,9 +70,17 @@ openviya:
       redirect-uri: ${OPENVIYA_TELEGRAM_OIDC_REDIRECT_URI:}
       bot-service-token: ${OPENVIYA_TELEGRAM_BOT_SERVICE_TOKEN:}
   queue:
+    worker-enabled: ${OPENVIYA_QUEUE_WORKER_ENABLED:false}
     poll-interval: ${OPENVIYA_QUEUE_POLL_INTERVAL:1s}
     batch-size: ${OPENVIYA_QUEUE_BATCH_SIZE:20}
     lease-duration: ${OPENVIYA_QUEUE_LEASE_DURATION:30s}
+  integrations:
+    three-x-ui:
+      enabled: ${OPENVIYA_3XUI_ENABLED:false}
+      admin-base-uri: ${OPENVIYA_3XUI_ADMIN_BASE_URI:http://localhost:2053/}
+      bearer-token: ${OPENVIYA_3XUI_BEARER_TOKEN:}
+      connect-timeout: ${OPENVIYA_3XUI_CONNECT_TIMEOUT:3s}
+      read-timeout: ${OPENVIYA_3XUI_READ_TIMEOUT:5s}
 
 logging:
   pattern:

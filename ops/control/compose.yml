@@ -1,0 +1,102 @@
+name: openviya-control
+services:
+  db:
+    image: ${POSTGRES_IMAGE:-postgres:18.6-alpine3.23}
+    environment:
+      POSTGRES_DB: openviya
+      POSTGRES_USER: openviya
+      POSTGRES_PASSWORD: ${OPENVIYA_DB_PASSWORD:?required}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
+    command: [postgres, -c, shared_buffers=32MB, -c, max_connections=20, -c, work_mem=2MB]
+    volumes: [postgres-data:/var/lib/postgresql]
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U openviya -d openviya"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    mem_limit: 160m
+    memswap_limit: 256m
+    restart: unless-stopped
+    logging: &logging
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+  panel:
+    image: ${PANEL_IMAGE:-ghcr.io/mhsanaei/3x-ui:v3.10.2}
+    environment:
+      XUI_ENABLE_FAIL2BAN: "false"
+    volumes:
+      - panel-data:/etc/x-ui
+      - panel-logs:/var/log/x-ui
+    ports: ["127.0.0.1:38471:2053"]
+    networks: [control]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 160m
+    memswap_limit: 256m
+    restart: unless-stopped
+    logging: *logging
+  app:
+    image: openviya-backend:control
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      args:
+        JAVA_RUNTIME_IMAGE: ${JAVA_RUNTIME_IMAGE:-eclipse-temurin:25-jre}
+    environment:
+      OPENVIYA_DB_URL: jdbc:postgresql://db:5432/openviya
+      OPENVIYA_DB_USERNAME: openviya
+      OPENVIYA_DB_PASSWORD: ${OPENVIYA_DB_PASSWORD:?required}
+      OPENVIYA_DB_POOL_SIZE: "4"
+      OPENVIYA_TOTP_ENCRYPTION_KEY: ${OPENVIYA_TOTP_ENCRYPTION_KEY:?required}
+      OPENVIYA_TELEGRAM_BOT_SERVICE_TOKEN: ${OPENVIYA_TELEGRAM_BOT_SERVICE_TOKEN:?required}
+      OPENVIYA_BOOTSTRAP_OWNER_ENABLED: ${OPENVIYA_BOOTSTRAP_OWNER_ENABLED:-false}
+      OPENVIYA_BOOTSTRAP_OWNER_LOGIN: ${OPENVIYA_BOOTSTRAP_OWNER_LOGIN:-}
+      OPENVIYA_BOOTSTRAP_OWNER_PASSWORD: ${OPENVIYA_BOOTSTRAP_OWNER_PASSWORD:-}
+      OPENVIYA_TELEGRAM_OIDC_ENABLED: ${OPENVIYA_TELEGRAM_OIDC_ENABLED:-false}
+      OPENVIYA_TELEGRAM_OIDC_CLIENT_ID: ${OPENVIYA_TELEGRAM_OIDC_CLIENT_ID:-}
+      OPENVIYA_TELEGRAM_OIDC_CLIENT_SECRET: ${OPENVIYA_TELEGRAM_OIDC_CLIENT_SECRET:-}
+      OPENVIYA_TELEGRAM_OIDC_REDIRECT_URI: https://api.openviya.online/login/oauth2/code/telegram
+      OPENVIYA_PUBLIC_BASE_URL: https://api.openviya.online/account/
+      OPENVIYA_SESSION_COOKIE_SECURE: "true"
+      OPENVIYA_3XUI_ENABLED: ${OPENVIYA_3XUI_ENABLED:-false}
+      OPENVIYA_3XUI_ADMIN_BASE_URI: ${OPENVIYA_3XUI_ADMIN_BASE_URI:-https://panel:2053/}
+      OPENVIYA_3XUI_BEARER_TOKEN: ${OPENVIYA_3XUI_BEARER_TOKEN:-}
+      OPENVIYA_QUEUE_WORKER_ENABLED: "false"
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=160m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=32m -XX:ActiveProcessorCount=1
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [database, control, web]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777"]
+    mem_limit: 480m
+    memswap_limit: 768m
+    restart: unless-stopped
+    logging: *logging
+  proxy:
+    image: ${CADDY_IMAGE:-caddy:2-alpine}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./proxy:/etc/caddy:ro
+      - ./web:/srv/web:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [web]
+    mem_limit: 80m
+    memswap_limit: 128m
+    restart: unless-stopped
+    logging: *logging
+networks:
+  database: {internal: true}
+  control: {}
+  web: {}
+volumes:
+  postgres-data: {}
+  panel-data: {}
+  panel-logs: {}
+  caddy-data: {}
+  caddy-config: {}

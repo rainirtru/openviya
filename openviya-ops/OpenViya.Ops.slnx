@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="src/OpenViya.Ops.Core/OpenViya.Ops.Core.csproj" />
+  <Project Path="src/OpenViya.Ops.Storage/OpenViya.Ops.Storage.csproj" />
+  <Project Path="src/OpenViya.Ops.Ssh/OpenViya.Ops.Ssh.csproj" />
+  <Project Path="src/OpenViya.Ops.Network/OpenViya.Ops.Network.csproj" />
+  <Project Path="src/OpenViya.Ops.Dns/OpenViya.Ops.Dns.csproj" />
+  <Project Path="src/OpenViya.Ops.Provisioning/OpenViya.Ops.Provisioning.csproj" />
+  <Project Path="src/OpenViya.Ops.HostsHelper/OpenViya.Ops.HostsHelper.csproj" />
+  <Project Path="src/OpenViya.Ops.Desktop/OpenViya.Ops.Desktop.csproj" />
+</Solution>

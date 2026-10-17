@@ -19,6 +19,10 @@
 
 Чтобы запустить только API-процесс вне Compose, перед запуском `java -jar target/openviya-backend-0.1.0-SNAPSHOT.jar` задайте `OPENVIYA_DB_URL`, `OPENVIYA_DB_USERNAME` и `OPENVIYA_DB_PASSWORD` для доступного сервера PostgreSQL.
 
+## Production-развертывание
+
+Решение от 17.10.2026: production на Ubuntu 26.04 работает без Docker. Бэкенд запускается как JAR через systemd, PostgreSQL устанавливается отдельной системной службой. Приведенный выше Compose предназначен для локальной разработки и проверок. Service unit и полная инструкция нативного развертывания входят в [этап 15 технического плана](docs/technical-implementation-plan.md#stage-15); их готовность не подтверждается локальным запуском Compose.
+
 ## Конфигурация
 
 Секреты задаются через переменные окружения или локальный игнорируемый `.env`. В `.env.example` находятся только демонстрационные значения. Пароль базы обязателен: приложение не стартует, если `OPENVIYA_DB_PASSWORD` не задан. Платежные и VPN-интеграции пока не настроены и не могут сообщить об успешной операции.
@@ -38,6 +42,8 @@
 Вход пользователя через Telegram Login/OIDC описан в `docs/api/telegram-auth.md`. Он выключен по умолчанию; для включения задайте BotFather client ID/secret, зарегистрируйте callback `{внешний origin backend}/login/oauth2/code/telegram` и укажите `OPENVIYA_TELEGRAM_OIDC_ENABLED=true`. Если приложение работает за reverse proxy и callback нельзя корректно вывести из запроса, задайте точный URI через `OPENVIYA_TELEGRAM_OIDC_REDIRECT_URI`. Пользовательский маршрут `GET /api/v1/me` доступен только после завершенного Telegram-входа.
 
 Для отдельного доверенного Telegram-бота предусмотрен ограниченный endpoint разрешения идентичности. Задайте `OPENVIYA_TELEGRAM_BOT_SERVICE_TOKEN` как случайный секрет длиной не менее 32 символов отдельно в backend и bot service. Не используйте его в браузере; бот предварительно проверяет обновления средствами Telegram. Endpoint и контракт описаны в `docs/api/telegram-auth.md`.
+
+Для разработки интеграции с 3x-ui предусмотрен выключенный по умолчанию read-only HTTP-клиент для чтения состояния панели, списка нод и inbound. Задайте `OPENVIYA_3XUI_ENABLED=true`, административный `OPENVIYA_3XUI_ADMIN_BASE_URI` (HTTPS и необязательный base path) и Bearer-токен через секретное окружение. HTTP разрешен только для localhost. Клиент не следует включать до настройки точного адреса и read-only полномочий токена. Он не изменяет клиентов и не открывает subscription API.
 
 ## База и очередь операций
 

@@ -1,0 +1,101 @@
+<Window x:Class="OpenViya.Ops.Desktop.ServerMaintenanceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Обслуживание VPS" Width="920" Height="760" MinWidth="760" MinHeight="620"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" ResizeMode="CanResizeWithGrip"
+        Background="{StaticResource Canvas}" Foreground="{StaticResource Ink}">
+  <Grid Margin="24">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel Grid.Row="0" Margin="0,0,0,16">
+      <TextBlock Text="УПРАВЛЯЕМЫЙ VPS" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Teal}"/>
+      <TextBlock x:Name="TitleText" Text="Обслуживание сервера" FontSize="25" FontWeight="SemiBold" Margin="0,4,0,0"/>
+      <TextBlock x:Name="EndpointText" TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontFamily="Cascadia Mono, Consolas" Margin="0,5,0,0"/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <StackPanel>
+        <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+          <StackPanel>
+            <TextBlock Text="Состояние VPS" FontWeight="SemiBold" FontSize="16"/>
+            <TextBlock x:Name="SnapshotText" Text="Состояние ещё не проверено. Проверка выполняется только по вашему действию." TextWrapping="Wrap" Foreground="{StaticResource Muted}" Margin="0,6,0,12"/>
+            <WrapPanel>
+              <Button x:Name="InspectButton" Content="Проверить текущее состояние" Click="Inspect_Click"/>
+              <TextBlock x:Name="FingerprintText" Text="Fingerprint ещё не прочитан" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="4,0,0,0"/>
+            </WrapPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+          <StackPanel>
+            <TextBlock Text="Доступ к SSH" FontWeight="SemiBold" FontSize="16"/>
+            <TextBlock x:Name="AuthHintText" TextWrapping="Wrap" Foreground="{StaticResource Muted}" Margin="0,4,0,10"/>
+            <Label x:Name="AuthLabel" Content="Пароль SSH"/>
+            <PasswordBox x:Name="AuthSecretBox" MaxLength="4096" ToolTip="Пароль SSH или passphrase приватного ключа. Поле очищается после каждого действия."/>
+            <TextBlock Text="Учётные данные используются только для выбранного действия и не сохраняются в профиле." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,7,0,0"/>
+          </StackPanel>
+        </Border>
+
+        <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+          <StackPanel>
+            <TextBlock Text="Настройки панели" FontWeight="SemiBold" FontSize="16"/>
+            <TextBlock Text="Поля показывают проверенное состояние VPS после проверки. Пустой список IP означает доступ с любого источника при публичном режиме." TextWrapping="Wrap" Foreground="{StaticResource Muted}" Margin="0,4,0,12"/>
+            <Grid>
+              <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="1.4*"/></Grid.ColumnDefinitions>
+              <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                <Label Target="{Binding ElementName=PanelPortBox}" Content="Порт панели"/>
+                <TextBox x:Name="PanelPortBox" MaxLength="5" VerticalContentAlignment="Center" ToolTip="Порт панели 3x-ui" TextChanged="Draft_Changed"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                <Label Target="{Binding ElementName=OpeningModeBox}" Content="Как открывать панель"/>
+                <ComboBox x:Name="OpeningModeBox" SelectionChanged="Draft_Changed">
+                  <ComboBoxItem Content="Через SSH-туннель"/>
+                  <ComboBoxItem Content="Публичный HTTPS"/>
+                </ComboBox>
+              </StackPanel>
+              <StackPanel Grid.Column="2">
+                <Label Target="{Binding ElementName=AllowedIpsBox}" Content="Разрешённые IP для публичного режима"/>
+                <TextBox x:Name="AllowedIpsBox" MinHeight="74" MaxLength="16000" AcceptsReturn="True" TextWrapping="NoWrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalContentAlignment="Top" TextChanged="Draft_Changed" ToolTip="По одному IPv4 или IPv6 адресу на строку. Пустое поле разрешает любой источник."/>
+              </StackPanel>
+            </Grid>
+            <TextBlock Text="Введите до 100 IPv4/IPv6 адресов, по одному на строку. CIDR и запятые не принимаются. Публичный доступ требует отдельного правила в панели межсетевого экрана провайдера." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,7,0,10"/>
+            <WrapPanel>
+              <Button x:Name="PlanButton" Content="Показать план изменений" Click="Plan_Click"/>
+              <Button x:Name="ApplyButton" Content="Применить план" IsEnabled="False" Background="#3A3020" BorderBrush="{StaticResource Brass}" Click="Apply_Click"/>
+            </WrapPanel>
+            <Border x:Name="PlanPanel" Visibility="Collapsed" Background="{StaticResource Raised}" BorderBrush="{StaticResource Brass}" BorderThickness="1" Padding="12" Margin="0,10,0,0">
+              <StackPanel>
+                <TextBlock Text="План изменений · 5-минутный таймер восстановления" FontWeight="SemiBold" Foreground="{StaticResource Brass}"/>
+                <TextBlock x:Name="PlanText" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                <TextBlock Text="Перед применением подтвердите последствия. Проверьте также provider firewall у хостинг-провайдера вручную; эта программа его не меняет." TextWrapping="Wrap" Foreground="{StaticResource Muted}" Margin="0,7,0,0"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+          <StackPanel>
+            <TextBlock Text="Сертификат, копии и обновления" FontWeight="SemiBold" FontSize="16"/>
+            <TextBlock Text="Проверка обновлений только сообщает версию 3x-ui. Установка обновления не входит в это действие." TextWrapping="Wrap" Foreground="{StaticResource Muted}" Margin="0,4,0,10"/>
+            <WrapPanel>
+              <Button x:Name="CheckCertificateButton" Content="Проверить сертификат" Click="CheckCertificate_Click"/>
+              <Button x:Name="RenewCertificateButton" Content="Продлить сертификат…" Foreground="{StaticResource Brass}" Click="RenewCertificate_Click"/>
+              <Button x:Name="BackupButton" Content="Создать резервную копию" Click="Backup_Click"/>
+              <Button x:Name="UpdatesButton" Content="Проверить обновления 3x-ui" Margin="0" Click="Updates_Click"/>
+            </WrapPanel>
+            <Grid Margin="0,12,0,0">
+              <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+              <ComboBox x:Name="BackupList" DisplayMemberPath="Name" SelectionChanged="Backup_SelectionChanged" ToolTip="Проверенные резервные копии на VPS"/>
+              <Button x:Name="DownloadBackupButton" Grid.Column="1" Content="Скачать копию…" IsEnabled="False" Margin="8,0,0,0" Click="DownloadBackup_Click"/>
+            </Grid>
+            <TextBlock Text="Архивы включают данные панели и управляемую конфигурацию. Выберите место хранения локально; не пересылайте архив без проверки его содержимого." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,7,0,0"/>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+    <Grid Grid.Row="2" Margin="0,14,0,0">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <TextBlock x:Name="StatusText" TextWrapping="Wrap" Foreground="{StaticResource Muted}" Margin="0,0,14,0" AutomationProperties.LiveSetting="Polite"/>
+      <Button x:Name="CancelOperationButton" Grid.Column="1" Content="Отменить ожидание" Visibility="Collapsed" Click="CancelOperation_Click"/>
+      <Button Grid.Column="2" Content="Готово" IsCancel="True" Margin="0" Click="Close_Click"/>
+    </Grid>
+  </Grid>
+</Window>

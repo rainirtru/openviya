@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/OpenViya.Ops.Desktop/OpenViya.Ops.Desktop.csproj" />
+  </ItemGroup>
+</Project>

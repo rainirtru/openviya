@@ -8,6 +8,14 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
+import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient;
+import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
+import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
+import org.springframework.security.oauth2.jwt.JwtDecoderFactory;
+import org.springframework.http.converter.FormHttpMessageConverter;
+import org.springframework.web.client.RestClient;
 
 @Configuration
 @ConditionalOnProperty(name = "openviya.auth.telegram.enabled", havingValue = "true")
@@ -17,6 +25,28 @@ public class TelegramOidcConfiguration {
     private static final String AUTHORIZATION_ENDPOINT = ISSUER + "/auth";
     private static final String TOKEN_ENDPOINT = ISSUER + "/token";
     private static final String JWKS_ENDPOINT = ISSUER + "/.well-known/jwks.json";
+
+    @Bean
+    JwtDecoderFactory<ClientRegistration> telegramJwtDecoderFactory() {
+        return new TelegramIdTokenDecoderFactory();
+    }
+
+    @Bean
+    OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> telegramTokenResponseClient() {
+        var rest = RestClient.builder()
+                .requestFactory(TelegramIdTokenDecoderFactory.requestFactory())
+                .requestInterceptor(new TelegramGzipInterceptor())
+                .messageConverters(converters -> {
+                    converters.clear();
+                    converters.add(new FormHttpMessageConverter());
+                    converters.add(new OAuth2AccessTokenResponseHttpMessageConverter());
+                })
+                .defaultStatusHandler(new OAuth2ErrorResponseErrorHandler())
+                .build();
+        var client = new RestClientAuthorizationCodeTokenResponseClient();
+        client.setRestClient(rest);
+        return client;
+    }
 
     @Bean
     OAuth2AuthorizedClientRepository telegramAuthorizedClientRepository() {

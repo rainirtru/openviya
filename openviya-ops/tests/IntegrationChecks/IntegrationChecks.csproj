@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/OpenViya.Ops.Ssh/OpenViya.Ops.Ssh.csproj" />
+    <ProjectReference Include="../../src/OpenViya.Ops.Network/OpenViya.Ops.Network.csproj" />
+  </ItemGroup>
+</Project>

@@ -4,6 +4,7 @@ import com.openviya.backend.identity.TelegramOidcSuccessHandler;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpMethod;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -53,13 +54,18 @@ public class SecurityConfiguration {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/internal/telegram/identity/resolve"))
                 .securityContext(context -> context.securityContextRepository(contextRepository))
+                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint((request, response, exception) -> {
+                    response.setStatus(401);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    response.getWriter().write("{\"code\":\"UNAUTHORIZED\"}");
+                }))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, "/actuator/health/**", "/actuator/info", "/api/v1").permitAll()
                         .requestMatchers("/api/v1/staff/auth/**").permitAll()
-                        .requestMatchers("/api/v1/auth/telegram/**", "/api/v1/auth/logout",
+                        .requestMatchers("/api/v1/auth/telegram/**", "/api/v1/auth/csrf", "/api/v1/auth/logout",
                                 "/api/v1/internal/telegram/identity/resolve",
                                 "/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/v1/me", "/api/v1/me/**").hasRole("USER")

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>OpenViya.Ops.Storage</AssemblyName><RootNamespace>OpenViya.Ops.Storage</RootNamespace></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OpenViya.Ops.Core\OpenViya.Ops.Core.csproj" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.13" />
+  </ItemGroup>
+</Project>

@@ -2,6 +2,7 @@ package com.openviya.backend.identity;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -40,7 +41,7 @@ public class UserIdentityRepository {
                 """,
                 (rs, rowNum) -> rs.getObject("user_id", UUID.class),
                 UUID.randomUUID(), candidateUserId, profile.telegramUserId(), profile.username(),
-                profile.displayName(), verifiedAt);
+                profile.displayName(), Timestamp.from(verifiedAt));
 
         UUID resolvedUserId;
         if (insertedIdentity.isEmpty()) {
@@ -58,7 +59,7 @@ public class UserIdentityRepository {
                     SET username = ?, display_name = ?, verified_at = ?, last_seen_at = clock_timestamp()
                     WHERE provider = 'TELEGRAM' AND provider_subject = ?
                     """,
-                    profile.username(), profile.displayName(), verifiedAt, profile.telegramUserId());
+                    profile.username(), profile.displayName(), Timestamp.from(verifiedAt), profile.telegramUserId());
         } else {
             resolvedUserId = insertedIdentity.getFirst();
         }

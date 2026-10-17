@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>OpenViya.Ops.DnsChecks</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/OpenViya.Ops.Core/Contracts.cs" Link="Core/Contracts.cs" />
+    <Compile Include="../../src/OpenViya.Ops.Core/DnsContracts.cs" Link="Core/DnsContracts.cs" />
+    <Compile Include="../../src/OpenViya.Ops.Core/ProfileValidation.cs" Link="Core/ProfileValidation.cs" />
+    <Compile Include="../../src/OpenViya.Ops.Core/PanelAllowedIps.cs" Link="Core/PanelAllowedIps.cs" />
+    <Compile Include="../../src/OpenViya.Ops.Dns/TimewebDnsClient.cs" Link="TimewebDnsClient.cs" />
+  </ItemGroup>
+</Project>
